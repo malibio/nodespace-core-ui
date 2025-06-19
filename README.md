@@ -1,94 +1,215 @@
 # NodeSpace Core UI
 
-**React components and user interface for NodeSpace**
+**React Component Library for Hierarchical Block Editor**
 
-This repository implements the React frontend components that provide the user interface for NodeSpace. It connects to the Tauri backend through commands and provides a seamless desktop application experience.
+This repository provides a React component library that implements a hierarchical block editor for NodeSpace. It's designed to be imported and used by the `nodespace-desktop-app`.
 
 ## 🎯 Purpose
 
-- **React components** - Reusable UI components for NodeSpace functionality
-- **Tauri integration** - Frontend commands that call Rust backend services
-- **User experience** - Intuitive interface for text capture and RAG queries
-- **Component library** - Shared UI components for plugin development
+- **Component Library** - Reusable React components for hierarchical block editing
+- **Default Export** - Single import provides complete editor functionality  
+- **Pure React** - No Tauri dependencies (handled by desktop app)
+- **CSS Bundled** - Styles automatically included with component imports
 
-## 📦 Key Features
+## 📦 Installation & Usage
 
-- **Text editor** - Rich text input for note capture and editing
-- **Search interface** - Semantic and full-text search with results display
-- **RAG query UI** - Question input with contextual AI responses
-- **Node management** - Browse, organize, and manage stored content
-- **Responsive design** - Optimized for desktop application usage
+### For NodeSpace Desktop App
+```tsx
+import NodeSpaceEditor from 'nodespace-core-ui';
 
-## 🔗 Dependencies
+function App() {
+  return (
+    <NodeSpaceEditor 
+      nodes={nodes}
+      callbacks={callbacks}
+      focusedNodeId={focusedNodeId}
+      // ... other props
+    />
+  );
+}
+```
 
-- **React ecosystem** - React, TypeScript, and modern frontend tools
-- **Tauri frontend APIs** - Integration with Rust backend commands
-- **UI framework** - Component library (TailwindCSS, Material-UI, etc.)
+That's it! CSS and all functionality included automatically.
 
-## 🏗️ Architecture Context
-
-Part of the [NodeSpace system architecture](../nodespace-system-design/README.md):
-
-1. `nodespace-core-types` - Shared data structures and interfaces
-2. `nodespace-data-store` - Database and vector storage
-3. `nodespace-nlp-engine` - AI/ML processing and LLM integration
-4. `nodespace-workflow-engine` - Automation and event processing
-5. `nodespace-core-logic` - Business logic orchestration
-6. **`nodespace-core-ui`** ← **You are here**
-7. `nodespace-desktop-app` - Tauri application shell
-
-## 🚀 Getting Started
-
-### **New to NodeSpace? Start Here:**
-1. **Read [NodeSpace System Design](../nodespace-system-design/README.md)** - Understand the full architecture
-2. **Check [Linear workspace](https://linear.app/nodespace)** - Find your current tasks (filter by `nodespace-core-ui`)
-3. **Review [Development Workflow](../nodespace-system-design/docs/development-workflow.md)** - Process and procedures
-4. **Study [Key Contracts](../nodespace-system-design/contracts/)** - Interface definitions you'll implement
-5. **See [MVP User Flow](../nodespace-system-design/examples/mvp-user-flow.md)** - What you're building
-
-### **Development Setup:**
+### For Development
 ```bash
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
+# Start demo application
+npm run demo
 
-# Build for production
+# Build component library
 npm run build
 
 # Run tests
 npm test
 ```
 
-## 🔄 MVP Implementation
+## 🔧 Component API
 
-The core UI implements the complete user workflow:
+### Main Component: `NodeSpaceEditor`
 
-1. **Text capture** - Rich text editor for content input
-2. **Content display** - View and organize stored nodes
-3. **Search interface** - Query interface with results display
-4. **RAG queries** - Question input with AI-generated responses
-5. **Error handling** - User-friendly error messages and recovery
-
-## 🧪 Testing
-
-```bash
-# Run component tests
-npm test
-
-# Run integration tests with Tauri
-npm run test:integration
-
-# Visual regression tests
-npm run test:visual
+```tsx
+interface NodeSpaceEditorProps {
+  nodes: BaseNode[];
+  focusedNodeId?: string | null;
+  callbacks: NodeSpaceCallbacks;
+  onFocus?: (nodeId: string) => void;
+  onBlur?: () => void;
+  onRemoveNode?: (node: BaseNode) => void;
+  // Collapsed state management
+  collapsedNodes?: Set<string>;
+  collapsibleNodeTypes?: Set<string>;
+  onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
+  className?: string;
+}
 ```
 
-## 📋 Current Status
+### Node Types
+- `BaseNode` - Base class for all hierarchical nodes
+- `TextNode` - Text content with markdown support
+- `TaskNode` - Task items with completion state
+- `DateNode` - Date/time-based content organization
+- `EntityNode` - User-defined custom node types
 
-**All tasks tracked in [Linear workspace](https://linear.app/nodespace)**
+### Utilities Exported
+- `countAllNodes` - Count total nodes in tree
+- `nodeUtils` - Various node manipulation utilities
+- `keyboardHandlers` - Keyboard interaction logic
 
-Filter by label: `nodespace-core-ui` to see issues for this repository.
+## 🏗️ Features
+
+### ✅ Hierarchical Block Editor
+- **Collapsible nodes** - Editor-level collapsed state management
+- **Visual hierarchy** - Indentation and connecting lines
+- **Keyboard navigation** - Full keyboard support
+- **Rich editing** - Multiple node types (text, tasks, dates, entities)
+- **Clean architecture** - Separation of data model and UI state
+
+### ✅ Keyboard Shortcuts
+- **Enter**: Split content and create new sibling node
+- **Shift+Enter**: Add newline within current node
+- **Backspace at start**: Join with previous node (intelligent child transfer)
+- **Delete at end**: Join with next node (intelligent child transfer)
+- **Tab**: Indent node (make child of previous sibling)
+- **Shift+Tab**: Outdent node (make sibling of parent)
+
+### ✅ Visual Features
+- **Dark mode support** - Toggle between light/dark themes
+- **Circle indicators** - Visual hierarchy indicators
+- **Connecting lines** - Show parent-child relationships
+- **Responsive design** - Works across different screen sizes
+
+## 📁 File Structure
+
+```
+src/
+├── lib.ts                    # Main library export + CSS import
+├── index.tsx                 # Demo app entry point
+├── NodeSpaceEditor.tsx       # Default export component
+├── hierarchy/                # Core rendering components
+│   ├── RenderNodeTree.tsx    # Tree rendering logic
+│   ├── NodeComponent.tsx     # Individual node component
+│   └── NodeEditor.tsx        # Node editing interface
+├── editors/                  # Node-specific editors
+│   ├── TextNodeEditor.tsx    # Text node editor
+│   ├── TaskNodeEditor.tsx    # Task node editor
+│   └── NodeEditorFactory.tsx # Editor selection logic
+├── nodes/                    # Node class definitions
+│   ├── BaseNode.ts           # Base hierarchical node
+│   ├── TextNode.ts           # Text content nodes
+│   ├── TaskNode.ts           # Task management nodes
+│   ├── DateNode.ts           # Date-based organization
+│   └── EntityNode.ts         # User-defined nodes
+├── utils/                    # Utility functions
+│   ├── nodeUtils.ts          # Node manipulation
+│   └── keyboardHandlers.ts   # Keyboard interaction
+├── icons/                    # Icon definitions
+├── nodeSpace.css             # Component styles (auto-bundled)
+└── demo/                     # Demo application
+    ├── App.tsx               # Demo app with examples
+    └── demo.css              # Demo-specific styles
+```
+
+## 🎨 Naming Conventions
+
+### React Components (return JSX)
+- **PascalCase**: `NodeComponent`, `RenderNodeTree`, `NodeEditor`
+- **File names**: Match component name (`NodeComponent.tsx`)
+
+### Utility Functions (no JSX)
+- **camelCase**: `countAllNodes`, `getIconNames`, `nodeUtils`  
+- **File names**: Descriptive camelCase (`nodeUtils.ts`)
+
+### Classes
+- **PascalCase**: `BaseNode`, `TextNode`, `TaskNode`, `EntityNode`
+
+### CSS Files
+- **camelCase**: `nodeSpace.css`, `demo.css`
+
+### Constants
+- **UPPER_SNAKE_CASE**: `DEFAULT_SLASH_OPTIONS`
+
+## 🧪 Demo Application
+
+The `src/demo/` folder contains a complete demo application showcasing all features:
+
+```bash
+npm run demo
+```
+
+**Demo Features:**
+- Complex test scenarios for hierarchy behavior
+- Dark mode toggle
+- Keyboard shortcut help
+- Examples of all node types
+- Test cases for edge behaviors
+
+## 🔗 Integration with NodeSpace
+
+### Architecture Context
+Part of the [NodeSpace system architecture](../nodespace-system-design/README.md):
+
+1. `nodespace-core-types` - Shared data structures
+2. `nodespace-data-store` - Database operations  
+3. `nodespace-nlp-engine` - AI/ML processing
+4. `nodespace-workflow-engine` - Automation
+5. `nodespace-core-logic` - Business logic
+6. **`nodespace-core-ui`** ← **You are here**
+7. `nodespace-desktop-app` - Tauri application (imports this library)
+
+### Integration Pattern
+- **This library**: Provides pure React components
+- **Desktop app**: Handles Tauri integration, data management, state
+- **Clear separation**: UI components separate from business logic
+
+## 📋 Development
+
+### Getting Started
+1. **Read [NodeSpace System Design](../nodespace-system-design/README.md)** - Understand full architecture
+2. **Check [Linear workspace](https://linear.app/nodespace)** - Find current tasks (filter: `nodespace-core-ui`)
+3. **Review [CLAUDE.md](./CLAUDE.md)** - Repository-specific development guidance
+
+### Testing
+```bash
+# Component unit tests
+npm test
+
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+```
+
+### Building for Distribution
+```bash
+# Build component library
+npm run build
+
+# Output in dist/ directory for import by desktop app
+```
 
 ---
 
