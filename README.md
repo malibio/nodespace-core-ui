@@ -27,7 +27,7 @@ This repository implements the React frontend components that provide the user i
 
 ## 🏗️ Architecture Context
 
-Part of the [NodeSpace system architecture](https://github.com/malibio/nodespace-system-design):
+Part of the [NodeSpace system architecture](../nodespace-system-design/README.md):
 
 1. `nodespace-core-types` - Shared data structures and interfaces
 2. `nodespace-data-store` - Database and vector storage
@@ -39,6 +39,14 @@ Part of the [NodeSpace system architecture](https://github.com/malibio/nodespace
 
 ## 🚀 Getting Started
 
+### **New to NodeSpace? Start Here:**
+1. **Read [NodeSpace System Design](../nodespace-system-design/README.md)** - Understand the full architecture
+2. **Check [Linear workspace](https://linear.app/nodespace)** - Find your current tasks (filter by `nodespace-core-ui`)
+3. **Review [Development Workflow](../nodespace-system-design/docs/development-workflow.md)** - Process and procedures
+4. **Study [Key Contracts](../nodespace-system-design/contracts/)** - Interface definitions you'll implement
+5. **See [MVP User Flow](../nodespace-system-design/examples/mvp-user-flow.md)** - What you're building
+
+### **Development Setup:**
 ```bash
 # Install dependencies
 npm install
@@ -76,15 +84,12 @@ npm run test:integration
 npm run test:visual
 ```
 
-## 📋 Development Status
+## 📋 Current Status
 
-- [ ] Set up React project with TypeScript
-- [ ] Implement text editor component
-- [ ] Build search interface
-- [ ] Create RAG query UI
-- [ ] Add Tauri command integration
-- [ ] Comprehensive component testing
+**All tasks tracked in [Linear workspace](https://linear.app/nodespace)**
+
+Filter by label: `nodespace-core-ui` to see issues for this repository.
 
 ---
 
-**Project Management:** All tasks tracked in [NodeSpace Project](https://github.com/users/malibio/projects/4)
+**Project Management:** All tasks tracked in [Linear workspace](https://linear.app/nodespace)
