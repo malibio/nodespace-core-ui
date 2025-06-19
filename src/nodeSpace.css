@@ -1,0 +1,376 @@
+/* NodeSpace UI - Component Library CSS */
+/* This file will be bundled with the package */
+
+.ns-editor-container { padding: 20px; }
+.ns-editor-header { margin-bottom: 20px; }
+.ns-editor-status { font-size: 14px; color: #666; }
+
+.ns-nodes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: inherit;
+}
+
+/* Hierarchical structure */
+.ns-node-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.ns-node-wrapper {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  margin-left: calc(var(--depth, 0) * 18px);
+}
+
+.ns-node-wrapper[data-depth="0"] { --depth: 0; }
+.ns-node-wrapper[data-depth="1"] { --depth: 1; }
+.ns-node-wrapper[data-depth="2"] { --depth: 2; }
+.ns-node-wrapper[data-depth="3"] { --depth: 3; }
+.ns-node-wrapper[data-depth="4"] { --depth: 4; }
+.ns-node-wrapper[data-depth="5"] { --depth: 5; }
+
+.ns-node-children {
+  /* Children container - no additional margin since wrapper handles indentation */
+  position: relative;
+}
+
+/* Vertical connecting line with dynamic height based on last child position */
+.ns-node-wrapper[data-has-children="true"][data-collapsed="false"]::before {
+  content: '';
+  position: absolute;
+  /* Position horizontally centered with THIS node's circle (dynamically calculated) */
+  left: var(--ns-vertical-line-left, calc(21px + (var(--depth, 0) * 24px))); /* Dynamic position with fallback */
+  top: 20.5px; /* Starting just below the circle */
+  width: 0.5px;
+  /* Dynamic height calculated from last child circle position */
+  height: var(--ns-line-height, 2000px); /* Fallback to large height */
+  border-left: 0.5px dotted var(--ns-parent-border-color, #808080);
+  background-color: transparent;
+  z-index: 0;
+}
+
+/* Horizontal connecting lines from parent vertical line to child circles */
+.ns-node-children .ns-node-wrapper::after {
+  content: '';
+  position: absolute;
+  /* Use dynamically calculated positions from JavaScript */
+  left: var(--ns-horizontal-line-left, -100px); /* Fallback positions off-screen */
+  top: var(--ns-horizontal-line-top, -100px);
+  width: var(--ns-horizontal-line-width, 0px);
+  height: 0.5px;
+  border-top: 0.5px dotted var(--ns-parent-border-color, #808080);
+  background-color: transparent;
+  z-index: 1;
+}
+
+.ns-node-number {
+  font-size: 12px;
+  color: #666;
+  min-width: 20px;
+  padding-top: 8px;
+}
+
+.ns-node-indicator {
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+}
+
+/* Override min-width for text nodes to match triangle width */
+.ns-node-indicator[data-node-type="text"] {
+  position: relative;
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+  margin-top: 9.5px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12px !important;
+}
+
+.ns-node-indicator[data-node-type="text"]::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 9px;
+  height: 9px;
+  background-color: transparent;
+  border-radius: 50%;
+  display: block;
+  z-index: 1;
+}
+
+.ns-node-indicator[data-node-type="text"]::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background-color: var(--ns-circle-color, black);
+  border-radius: 50%;
+  display: block;
+  z-index: 2;
+}
+
+.ns-node-indicator[data-node-type="text"][data-has-children="true"]::before {
+  background-color: var(--ns-parent-border-color, #808080);
+}
+
+.ns-node-textarea {
+  flex: 1;
+  font-size: 16px;
+  resize: none;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 0;
+  background: transparent;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  transition: border-color 0.2s ease;
+  outline: none;
+  margin-left: -2px;
+  overflow: hidden;
+}
+
+.ns-node-remove {
+  padding: 4px 8px;
+  font-size: 12px;
+  margin-top: 4px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.ns-node-remove:hover { background-color: #f5f5f5; }
+.ns-node-remove:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* State management via data attributes - no focus borders */
+.ns-node-wrapper[data-focused="true"] .ns-node-textarea {
+  outline: none;
+}
+
+/* Node type indicators */
+.ns-node-wrapper[data-node-type="text"] .ns-node-indicator { color: #6b7280; }
+.ns-node-wrapper[data-node-type="task"] .ns-node-indicator { color: #3b82f6; }
+.ns-node-wrapper[data-node-type="date"] .ns-node-indicator { color: #059669; }
+
+/* Task node indicators - box style with 3 states */
+.ns-node-indicator[data-node-type="task"] {
+  position: relative;
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+  margin-top: 9.5px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12px !important;
+}
+
+/* Back box - 12x12px, transparent by default, visible when has children */
+.ns-node-indicator[data-node-type="task"]::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background-color: transparent;
+  border-radius: 2px;
+  display: block;
+  z-index: 1;
+}
+
+/* Front box - 9x9px filled with circle color */
+.ns-node-indicator[data-node-type="task"]::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 9px;
+  height: 9px;
+  border: 0.5px solid var(--ns-circle-color, black);
+  border-radius: 1px;
+  background: var(--ns-circle-color, black);
+  display: block;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+/* Parent state - show back box when has children */
+.ns-node-indicator[data-node-type="task"][data-has-children="true"]::before {
+  background-color: var(--ns-parent-border-color, #808080);
+}
+
+/* In-progress state - circle color background with white hyphen */
+.ns-node-indicator[data-node-type="task"][data-task-status="in-progress"]::after {
+  content: '−';
+  background: var(--ns-circle-color, black);
+  border: 0.5px solid var(--ns-circle-color, black);
+  color: var(--ns-background-color, white);
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 9px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+/* Completed state - circle color background with white checkmark */
+.ns-node-indicator[data-node-type="task"][data-task-status="completed"]::after {
+  content: '✓';
+  background: var(--ns-circle-color, black);
+  border: 0.5px solid var(--ns-circle-color, black);
+  color: var(--ns-background-color, white);
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 9px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Date node indicators (future) */
+.ns-node-indicator[data-node-type="date"]::before { content: '📅'; font-size: 14px; }
+
+/* Collapse triangle styling - relative positioned with transform for dynamic placement */
+.ns-collapse-triangle {
+  width: 9px;
+  height: 9px;
+  margin-top: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  transform: translateX(var(--ns-triangle-left, -7px));
+  z-index: 10;
+}
+
+/* Spacer maintains the same flex space as triangle would have taken */
+.ns-collapse-spacer {
+  width: 9px;
+  height: 9px;
+  margin-top: 11px;
+  flex-shrink: 0;
+  position: relative;
+  /* Ensure spacer takes up the same space as absolutely positioned triangle */
+}
+
+.ns-collapse-triangle::before {
+  content: '';
+  width: 0;
+  height: 0;
+  transition: all 0.2s ease;
+}
+
+/* Component level defaults */
+.ns-collapse-triangle[data-collapsed="true"]::before {
+  /* Right-pointing triangle when collapsed */
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 7px solid var(--ns-parent-border-color, #808080);
+}
+
+.ns-collapse-triangle[data-collapsed="false"]::before {
+  /* Down-pointing triangle when expanded */
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 7px solid var(--ns-parent-border-color, #808080);
+}
+
+.ns-controls { display: flex; gap: 10px; align-items: center; }
+.ns-button {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+.ns-button:hover { background-color: #f5f5f5; }
+
+.ns-help { margin-top: 20px; font-size: 14px; color: #666; }
+.ns-help strong { color: #333; }
+.ns-help ul { margin: 10px 0; padding-left: 20px; }
+.ns-help li { margin: 5px 0; }
+
+/* Slash Command Modal */
+.ns-slash-command-modal {
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.ns-slash-command-list {
+  padding: 8px 0;
+}
+
+.ns-slash-command-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  gap: 12px;
+}
+
+.ns-slash-command-option:hover,
+.ns-slash-command-option.ns-selected {
+  background-color: #f6f8fa;
+}
+
+.ns-slash-command-option.ns-selected {
+  background-color: #dbeafe;
+}
+
+/* SVG Icon System */
+.ns-icon {
+  color: var(--ns-circle-color, #374151);
+  transition: color 0.2s ease;
+}
+
+.ns-slash-command-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ns-slash-command-label {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .ns-editor-container { padding: 10px; }
+  .ns-node-wrapper { gap: 8px; }
+  .ns-node-number { min-width: 18px; }
+  .ns-node-textarea { font-size: 16px; }
+}
