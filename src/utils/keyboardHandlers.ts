@@ -13,6 +13,7 @@ export interface EditContext {
     onNodeChange?: (nodeId: string, content: string) => void;
     onStructureChange?: (operation: string, nodeId: string) => void;
   };
+  collapsedNodes?: Set<string>;
 }
 
 /**

@@ -367,6 +367,7 @@ export function NodeComponent({
           onFocus={onFocus}
           onBlur={onBlur}
           navigationStateRef={navigationStateRef}
+          collapsedNodes={collapsedNodes}
         />
       </div>
 
