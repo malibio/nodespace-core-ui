@@ -251,13 +251,13 @@
 /* Date node indicators (future) */
 .ns-node-indicator[data-node-type="date"]::before { content: '📅'; font-size: 14px; }
 
-/* AI Chat node indicators - sparkles icon style matching task/text sizing */
+/* AI Chat node indicators - AI icon style with top alignment */
 .ns-node-indicator[data-node-type="ai-chat"] {
   position: relative;
   width: 12px !important;
   height: 12px !important;
   flex-shrink: 0 !important;
-  margin-top: 9.5px !important;
+  margin-top: 4px !important;
   display: flex;
   align-items: center;
   justify-content: center;
