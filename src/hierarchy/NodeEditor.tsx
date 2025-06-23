@@ -225,6 +225,7 @@ export function NodeEditor({
     const handler = KeyboardHandlerRegistry.getHandlerForNode(node);
     
     if (!handler) {
+      console.warn(`No keyboard handler found for node type: ${node.getNodeType()}`);
       return;
     }
     
@@ -405,13 +406,6 @@ export function NodeEditor({
         onClick={handleClick}
       />
       
-      <button
-        onClick={handleRemove}
-        disabled={isRemoveDisabled}
-        className="ns-node-remove"
-      >
-        Remove
-      </button>
       
       {/* Slash Command Modal */}
       <SlashCommandModal

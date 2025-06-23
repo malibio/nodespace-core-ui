@@ -1,4 +1,4 @@
-import { BaseNode } from '../nodes';
+import { BaseNode, TextNode, TaskNode, AIChatNode } from '../nodes';
 
 /**
  * Utility functions for working with node hierarchies
@@ -186,18 +186,12 @@ export class NodeFactory {
     
     switch (nodeType) {
       case 'text':
-        // Import here to avoid circular dependencies
-        const { TextNode } = require('../nodes');
         return new TextNode(content);
       
       case 'task':
-        // TaskNode is now implemented for testing
-        const { TaskNode } = require('../nodes');
         return new TaskNode(content);
       
       case 'ai-chat':
-        // AIChatNode for AI interactions
-        const { AIChatNode } = require('../nodes');
         return new AIChatNode(content);
       
       // Future node types will be added here as they're implemented
@@ -206,8 +200,7 @@ export class NodeFactory {
       default:
         // For now, unknown types fallback to text node
         // This ensures backward compatibility and prevents runtime errors
-        const { TextNode: FallbackTextNode } = require('../nodes');
-        return new FallbackTextNode(content);
+        return new TextNode(content);
     }
   }
   
