@@ -25,6 +25,7 @@ interface NodeEditorProps {
   onFocus: (nodeId: string) => void;
   onBlur: () => void;
   navigationStateRef: React.MutableRefObject<{ preferredColumn: number | null; resetCounter: number }>;
+  collapsedNodes?: Set<string>;
 }
 
 // Helper function to calculate node depth in hierarchy
@@ -48,7 +49,8 @@ export function NodeEditor({
   callbacks,
   onFocus,
   onBlur,
-  navigationStateRef
+  navigationStateRef,
+  collapsedNodes
 }: NodeEditorProps) {
   const nodeId = node.getNodeId();
   
@@ -232,7 +234,8 @@ export function NodeEditor({
       content,
       allNodes: nodes,
       textareaRefs,
-      callbacks
+      callbacks,
+      collapsedNodes
     };
     
     let result: KeyboardResult = { handled: false };

@@ -1,20 +1,28 @@
-# CLAUDE.md
+# CLAUDE.md - NodeSpace Core UI Development
 
-## 🎯 CRITICAL: Read System Design First
+## 🎯 FINDING YOUR NEXT TASK
 
-**BEFORE working on this repository, you MUST read:**
-- `../nodespace-system-design/CLAUDE.md` - Complete development guidance
-- `../nodespace-system-design/README.md` - Architecture overview
-- `../nodespace-system-design/docs/development-workflow.md` - Process
+**See [development-workflow.md](../nodespace-system-design/docs/development-workflow.md)** for task management workflow.
 
-This repository is part of the NodeSpace distributed system and follows centralized contracts and workflows defined in `nodespace-system-design`.
+## 🚀 Quick Start: "Work on the next task"
+
+1. **📖 Architecture Context**: Read [NodeSpace System Design](../nodespace-system-design) for distributed system understanding
+2. **🤖 Autonomous Development**: Follow the workflow below for self-directed implementation
+
+## 🏗️ Repository Context in Distributed Architecture
+
+### This Repository's Role
+- **Independent React Library** - Pure UI components with no backend dependencies
+- **Used by Desktop App** - Imported by `nodespace-desktop-app` for hierarchical block editing
+- **Loosely Coupled** - Can be used independently or in other React applications
+- **Highly Aligned** - Follows NodeSpace entity-centric design patterns
 
 ## Repository-Specific Information
 
 **Repository**: nodespace-core-ui
 **Purpose**: React component library for hierarchical block editor used by NodeSpace desktop application
 **Architecture**: Component library with default export pattern
-**Contract Implementation**: `../nodespace-system-design/contracts/tauri-commands.rs`
+**Interface Pattern**: Independent component library with clear props-based API
 
 ## Component Library Architecture
 
@@ -71,14 +79,49 @@ npm run type-check
 
 ### Integration Points
 - **Used by**: `nodespace-desktop-app` (imports this component library)
-- **Future Integration**: Will integrate with `nodespace-core-types` for shared TypeScript types
-- **No Direct Tauri Integration**: Desktop app handles Tauri command integration
+- **Independent**: No direct dependencies on other NodeSpace repositories
+- **Clean API**: Component props provide all needed integration points
 
 ### Current Status
-- **Task Tracking**: [Linear workspace](https://linear.app/nodespace) (filter: `nodespace-core-ui`)
-- **Contract Compliance**: Run validation from `../nodespace-system-design/validation/`
+- **Independent Library** - No dependencies on other NodeSpace repositories
+- **MVP Component Support** - TextNode editing functional, AIChatNode component needed
 
-## Development Notes
+## 🤖 Autonomous Development Workflow
+
+### Task Implementation Process
+1. **📋 Task Discovery**: From Linear issue, identify specific component/feature to implement
+2. **🎯 Implementation Scope**: Focus only on React component functionality (no backend logic)
+3. **🧪 Development Pattern**:
+   ```bash
+   # 1. Start demo environment
+   npm run demo
+   
+   # 2. Implement component following existing patterns
+   # - Follow naming conventions below
+   # - Extend from BaseNode if applicable
+   # - Add to nodeUtils factory if new node type
+   
+   # 3. Test component behavior
+   npm test
+   
+   # 4. Validate integration in demo
+   # - Test in demo app
+   # - Verify component props API
+   # - Check styling and responsive behavior
+   ```
+
+### Implementation Patterns
+- **New Node Types**: Extend `BaseNode` → Add to `nodeUtils` factory → Create editor component
+- **UI Components**: Follow existing component structure and naming conventions
+- **Styling**: Use CSS modules or add to `nodeSpace.css` 
+- **State Management**: Component-level state, no global state dependencies
+
+### Testing Strategy
+- **Component Tests**: Focus on React component behavior and props
+- **Demo Validation**: Use demo app to verify integration patterns
+- **No Backend Tests**: This library is pure React, no backend testing needed
+
+## 🔧 Development Notes
 
 ### Naming Conventions
 **React Components (return JSX)**:
