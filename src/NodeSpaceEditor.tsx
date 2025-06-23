@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { BaseNode } from './nodes';
 import { RenderNodeTree, NodeSpaceCallbacks } from './hierarchy';
 import { countAllNodes } from './utils';
@@ -11,7 +11,7 @@ export interface NodeSpaceEditorProps {
   onBlur?: () => void;
   onRemoveNode?: (node: BaseNode) => void;
   className?: string;
-  // Collapsed state management
+  // Optional external collapse state management
   collapsedNodes?: Set<string>;
   collapsibleNodeTypes?: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
@@ -32,12 +32,35 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
   onBlur,
   onRemoveNode,
   className = '',
-  collapsedNodes = new Set(),
+  collapsedNodes: externalCollapsedNodes,
   collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity']),
-  onCollapseChange
+  onCollapseChange: externalOnCollapseChange
 }) => {
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   const totalNodeCount = countAllNodes(nodes);
+
+  // Internal collapse state management
+  const [internalCollapsedNodes, setInternalCollapsedNodes] = useState<Set<string>>(new Set());
+  
+  // Use external state if provided, otherwise use internal state
+  const collapsedNodes = externalCollapsedNodes || internalCollapsedNodes;
+  
+  // Handle collapse changes - use external handler if provided, otherwise update internal state
+  const handleCollapseChange = useCallback((nodeId: string, collapsed: boolean) => {
+    if (externalOnCollapseChange) {
+      externalOnCollapseChange(nodeId, collapsed);
+    } else {
+      setInternalCollapsedNodes(prev => {
+        const newSet = new Set(prev);
+        if (collapsed) {
+          newSet.add(nodeId);
+        } else {
+          newSet.delete(nodeId);
+        }
+        return newSet;
+      });
+    }
+  }, [externalOnCollapseChange]);
 
   const handleRemoveNode = (node: BaseNode) => {
     if (onRemoveNode) {
@@ -85,7 +108,7 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
         onBlur={handleBlur}
         collapsedNodes={collapsedNodes}
         collapsibleNodeTypes={collapsibleNodeTypes}
-        onCollapseChange={onCollapseChange}
+        onCollapseChange={handleCollapseChange}
       />
     </div>
   );
