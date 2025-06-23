@@ -15,20 +15,56 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
     const { cursorPosition, content } = context;
     
+    // Special case: cursor at beginning - create empty node above
+    if (cursorPosition === 0) {
+      const newNode = NodeFactory.createSimilarNode(node, '');
+      let updatedNodes: BaseNode[] = [];
+      
+      if (node.parent) {
+        const parentChildren = node.parent.children;
+        const nodeIndex = parentChildren.findIndex(child => child.getNodeId() === node.getNodeId());
+        parentChildren.splice(nodeIndex, 0, newNode); // Insert before current node
+        newNode.parent = node.parent;
+        
+        updatedNodes = this.getRootNodes(context);
+      } else {
+        const allNodes = context.allNodes;
+        const rootIndex = allNodes.findIndex(n => n.getNodeId() === node.getNodeId());
+        updatedNodes = [...allNodes];
+        updatedNodes.splice(rootIndex, 0, newNode); // Insert before current node
+      }
+      
+      return {
+        handled: true,
+        newNodes: updatedNodes,
+        focusNodeId: node.getNodeId(), // Stay focused on original node
+        cursorPosition: 0, // Cursor stays at beginning of original node
+        preventDefault: true
+      };
+    }
+    
+    // Normal case: split content at cursor position
     const leftContent = content.substring(0, cursorPosition);
     const rightContent = content.substring(cursorPosition);
     
     node.setContent(leftContent);
     const newNode = NodeFactory.createSimilarNode(node, rightContent);
     
-    // Handle children transfer for collapsed nodes
+    // Handle children transfer based on collapsed state
     if (node.children.length > 0) {
-      // When splitting text, children go to the right (new) node
-      newNode.children = [...node.children];
-      newNode.children.forEach(child => {
-        child.parent = newNode;
-      });
-      node.children = [];
+      const isCollapsed = context.collapsedNodes?.has(node.getNodeId()) ?? false;
+      
+      if (isCollapsed) {
+        // When collapsed, children stay with the original node
+        // No children transfer needed
+      } else {
+        // When expanded, children go to the right (new) node
+        newNode.children = [...node.children];
+        newNode.children.forEach(child => {
+          child.parent = newNode;
+        });
+        node.children = [];
+      }
     }
     
     let updatedNodes: BaseNode[] = [];

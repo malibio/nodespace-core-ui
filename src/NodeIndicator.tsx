@@ -43,6 +43,17 @@ export function NodeIndicator({ node, className = '', hasChildren = false, onSta
       />
     );
   }
+  
+  if (nodeType === 'ai-chat') {
+    return (
+      <span 
+        className={`ns-node-indicator ${node.getIndicatorClass()} ${className}`}
+        data-node-type={nodeType}
+        data-has-children={hasChildren}
+        dangerouslySetInnerHTML={{ __html: node.createIndicator().innerHTML }}
+      />
+    );
+  }
 
   const indicatorElement = node.createIndicator();
   

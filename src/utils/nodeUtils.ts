@@ -195,6 +195,11 @@ export class NodeFactory {
         const { TaskNode } = require('../nodes');
         return new TaskNode(content);
       
+      case 'ai-chat':
+        // AIChatNode for AI interactions
+        const { AIChatNode } = require('../nodes');
+        return new AIChatNode(content);
+      
       // Future node types will be added here as they're implemented
       case 'date':
       case 'node-link':
@@ -221,6 +226,10 @@ export class NodeFactory {
       case 'task':
         const { TaskNode } = require('../nodes');
         return new TaskNode(content);
+      
+      case 'ai-chat':
+        const { AIChatNode } = require('../nodes');
+        return new AIChatNode(content);
       
       // Future node types will be added here as they're implemented
       case 'date':

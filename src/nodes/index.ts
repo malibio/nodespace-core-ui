@@ -4,6 +4,7 @@ import { TaskNode } from './TaskNode';
 import { DateNode } from './DateNode';
 import { NodeLinkNode } from './NodeLinkNode';
 import { EntityNode } from './EntityNode';
+import { AIChatNode } from './AIChatNode';
 
 // Export new base class and all node types
 export { BaseNode } from './BaseNode';
@@ -12,6 +13,7 @@ export { TaskNode, type TaskStatus, type TaskPriority } from './TaskNode';
 export { DateNode, type DateFormat } from './DateNode';
 export { NodeLinkNode } from './NodeLinkNode';
 export { EntityNode } from './EntityNode';
+export { AIChatNode, type AIChatData } from './AIChatNode';
 
 
 // Export all node types as a union
@@ -21,7 +23,8 @@ export type NodeType =
   | TaskNode
   | DateNode
   | NodeLinkNode
-  | EntityNode;
+  | EntityNode
+  | AIChatNode;
 
 // Utility function to create nodes
 export function createNode(type: string, content: string = '', ...args: any[]): BaseNode {
@@ -30,6 +33,8 @@ export function createNode(type: string, content: string = '', ...args: any[]): 
       return new TextNode(content, args[0]);
     case 'task':
       return new TaskNode(content, args[0]);
+    case 'ai-chat':
+      return new AIChatNode(content, args[0]);
     case 'date':
       return new DateNode(args[0] || new Date(), args[1] || 'full', args[2]);
     case 'node-link':

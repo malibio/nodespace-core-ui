@@ -1,3 +1,7 @@
+# ⚠️ BEFORE STARTING ANY WORK
+👉 **ALL development workflows are in**: `../nodespace-system-design`
+👉 **This README.md only contains**: Repository-specific React and TypeScript patterns
+
 # NodeSpace Core UI
 
 **React Component Library for Hierarchical Block Editor**
@@ -166,30 +170,39 @@ npm run demo
 - Examples of all node types
 - Test cases for edge behaviors
 
-## 🔗 Integration with NodeSpace
+## 🔗 NodeSpace System Integration
 
 ### Architecture Context
-Part of the [NodeSpace system architecture](../nodespace-system-design/README.md):
+This repository is part of the **NodeSpace distributed system** - an entity-centric, AI-powered knowledge management platform. 
 
-1. `nodespace-core-types` - Shared data structures
-2. `nodespace-data-store` - Database operations  
-3. `nodespace-nlp-engine` - AI/ML processing
-4. `nodespace-workflow-engine` - Automation
-5. `nodespace-core-logic` - Business logic
-6. **`nodespace-core-ui`** ← **You are here**
-7. `nodespace-desktop-app` - Tauri application (imports this library)
+**📖 Full System Overview**: See [NodeSpace System Design](../nodespace-system-design) for complete architecture, development workflow, and coordination.
+
+### This Repository's Role
+- **Independent Component Library** - Pure React components with no backend dependencies
+- **Used by Desktop App** - Imported by `nodespace-desktop-app` for the main application UI
+- **Hierarchical Block Editor** - Specialized for NodeSpace's entity-centric content model
 
 ### Integration Pattern
-- **This library**: Provides pure React components
-- **Desktop app**: Handles Tauri integration, data management, state
-- **Clear separation**: UI components separate from business logic
+- **This library**: Provides pure React components and editor logic
+- **Desktop app**: Handles Tauri integration, data persistence, AI processing
+- **Clear separation**: UI components remain independent of business logic
 
-## 📋 Development
+### Distributed Architecture
+- **Loosely coupled** - This library works independently and can be used in other React apps
+- **Highly aligned** - Follows NodeSpace design patterns and entity-centric model
 
-### Getting Started
-1. **Read [NodeSpace System Design](../nodespace-system-design/README.md)** - Understand full architecture
-2. **Check [Linear workspace](https://linear.app/nodespace)** - Find current tasks (filter: `nodespace-core-ui`)
-3. **Review [CLAUDE.md](./CLAUDE.md)** - Repository-specific development guidance
+## 📋 Contributing
+
+### For Contributors
+1. **🏗️ System Context**: Read [NodeSpace System Design](../nodespace-system-design) for full architecture understanding
+2. **📋 Find Tasks**: Check [Linear workspace](https://linear.app/nodespace) for current work (filter: `nodespace-core-ui`)
+3. **🤖 Development**: See [CLAUDE.md](./CLAUDE.md) for autonomous development workflow
+4. **🧪 Testing**: Run `npm test` to validate component behavior
+
+### For Users
+- **Installation**: `npm install nodespace-core-ui`
+- **Usage**: Import the main `NodeSpaceEditor` component
+- **Documentation**: Component APIs documented above
 
 ### Testing
 ```bash
