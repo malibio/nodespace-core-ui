@@ -1,6 +1,9 @@
 # ⚠️ BEFORE STARTING ANY WORK
-👉 **ALL development workflows are in**: `../nodespace-system-design`
-👉 **This README.md only contains**: Repository-specific React and TypeScript patterns
+👉 **STEP 1**: Read development workflow: `../nodespace-system-design/docs/development-workflow.md`
+👉 **STEP 2**: Check Linear for assigned tasks
+👉 **STEP 3**: Repository-specific patterns below
+
+**This README.md only contains**: Repository-specific React and TypeScript patterns
 
 # NodeSpace Core UI
 

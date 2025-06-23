@@ -1,4 +1,19 @@
-# CLAUDE.md - NodeSpace Core UI Development
+# CLAUDE.md
+
+🚨 **STOP - READ WORKFLOW FIRST** 🚨
+Before doing ANYTHING else, you MUST read the development workflow:
+1. Read: `../nodespace-system-design/docs/development-workflow.md`
+2. Check Linear for current tasks
+3. Then return here for implementation guidance
+
+❌ **FORBIDDEN:** Any code analysis, planning, or implementation before reading the workflow
+
+## Development Workflow
+**ALWAYS start with README.md** - This file contains the authoritative development workflow and setup instructions for this repository.
+
+**Then return here** for repository-specific guidance and architecture details.
+
+## NodeSpace Core UI Development
 
 ## 🎯 FINDING YOUR NEXT TASK
 
