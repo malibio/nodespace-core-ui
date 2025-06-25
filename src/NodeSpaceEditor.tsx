@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { BaseNode } from './nodes';
 import { RenderNodeTree, NodeSpaceCallbacks } from './hierarchy';
 import { countAllNodes } from './utils';
@@ -6,15 +6,17 @@ import { countAllNodes } from './utils';
 export interface NodeSpaceEditorProps {
   nodes: BaseNode[];
   focusedNodeId?: string | null;
-  callbacks: NodeSpaceCallbacks;
+  callbacks?: NodeSpaceCallbacks;
+
+  // NEW: Support for collapsed state restoration
+  initialCollapsedNodes?: Set<string>;
+
+  // Keep other existing props...
   onFocus?: (nodeId: string) => void;
   onBlur?: () => void;
   onRemoveNode?: (node: BaseNode) => void;
   className?: string;
-  // Optional external collapse state management
-  collapsedNodes?: Set<string>;
   collapsibleNodeTypes?: Set<string>;
-  onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
 }
 
 /**
@@ -28,39 +30,44 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
   nodes,
   focusedNodeId = null,
   callbacks,
+  initialCollapsedNodes,
   onFocus,
   onBlur,
   onRemoveNode,
   className = '',
-  collapsedNodes: externalCollapsedNodes,
-  collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity']),
-  onCollapseChange: externalOnCollapseChange
+  collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity'])
 }) => {
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   const totalNodeCount = countAllNodes(nodes);
 
-  // Internal collapse state management
-  const [internalCollapsedNodes, setInternalCollapsedNodes] = useState<Set<string>>(new Set());
-  
-  // Use external state if provided, otherwise use internal state
-  const collapsedNodes = externalCollapsedNodes || internalCollapsedNodes;
-  
-  // Handle collapse changes - use external handler if provided, otherwise update internal state
-  const handleCollapseChange = useCallback((nodeId: string, collapsed: boolean) => {
-    if (externalOnCollapseChange) {
-      externalOnCollapseChange(nodeId, collapsed);
-    } else {
-      setInternalCollapsedNodes(prev => {
-        const newSet = new Set(prev);
-        if (collapsed) {
-          newSet.add(nodeId);
-        } else {
-          newSet.delete(nodeId);
-        }
-        return newSet;
-      });
+  const [internalCollapsedNodes, setInternalCollapsedNodes] = useState<Set<string>>(
+    initialCollapsedNodes || new Set()
+  );
+
+  // Apply initial collapsed state when nodes change
+  useEffect(() => {
+    if (initialCollapsedNodes && initialCollapsedNodes.size > 0) {
+      setInternalCollapsedNodes(initialCollapsedNodes);
     }
-  }, [externalOnCollapseChange]);
+  }, [initialCollapsedNodes]);
+
+  const handleNodeCollapseToggle = useCallback((nodeId: string, collapsed: boolean) => {
+    // Update internal state
+    setInternalCollapsedNodes(prev => {
+      const newSet = new Set(prev);
+      if (collapsed) {
+        newSet.add(nodeId);
+      } else {
+        newSet.delete(nodeId);
+      }
+      return newSet;
+    });
+
+    // Notify parent component through modern callback
+    if (callbacks?.onCollapseStateChange) {
+      callbacks.onCollapseStateChange(nodeId, collapsed);
+    }
+  }, [callbacks]);
 
   const handleRemoveNode = (node: BaseNode) => {
     const nodeId = node.getNodeId();
@@ -72,12 +79,12 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
       if (totalNodeCount > 1) {
         if (node.parent) {
           node.parent.removeChild(node);
-          if (callbacks.onNodesChange) {
+          if (callbacks?.onNodesChange) {
             callbacks.onNodesChange([...nodes]);
           }
         } else {
           const newNodes = nodes.filter(n => n.getNodeId() !== node.getNodeId());
-          if (callbacks.onNodesChange) {
+          if (callbacks?.onNodesChange) {
             callbacks.onNodesChange(newNodes);
           }
         }
@@ -85,7 +92,7 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
     }
     
     // Fire semantic deletion event
-    if (callbacks.onNodeDelete) {
+    if (callbacks?.onNodeDelete) {
       callbacks.onNodeDelete(nodeId);
     }
   };
@@ -119,12 +126,12 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
         textareaRefs={textareaRefs}
         onRemoveNode={handleRemoveNode}
         totalNodeCount={totalNodeCount}
-        callbacks={callbacks}
+        callbacks={callbacks || {}}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        collapsedNodes={collapsedNodes}
+        collapsedNodes={internalCollapsedNodes}
         collapsibleNodeTypes={collapsibleNodeTypes}
-        onCollapseChange={handleCollapseChange}
+        onCollapseChange={handleNodeCollapseToggle}
         onFocusedNodeIdChange={handleFocusedNodeIdChange}
       />
     </div>

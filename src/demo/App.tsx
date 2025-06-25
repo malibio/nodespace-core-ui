@@ -91,6 +91,18 @@ function DemoApp() {
     setEventLog(prev => [...prev.slice(-9), `${timestamp}: ${message}`]);
   };
 
+  const handleCollapseStateChange = (nodeId: string, collapsed: boolean) => {
+    setCollapsedNodes(prev => {
+      const newSet = new Set(prev);
+      if (collapsed) {
+        newSet.add(nodeId);
+      } else {
+        newSet.delete(nodeId);
+      }
+      return newSet;
+    });
+  };
+
   const callbacks: NodeSpaceCallbacks = {
     onNodesChange: (newNodes: BaseNode[]) => {
       setNodes(newNodes);
@@ -116,7 +128,8 @@ function DemoApp() {
     },
     onNodeStructureChange: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => {
       logEvent(`Structure: ${operation} ${nodeId.slice(0, 8)}...`);
-    }
+    },
+    onCollapseStateChange: handleCollapseStateChange, // NEW
   };
 
   const handleFocus = (nodeId: string) => {
@@ -125,18 +138,6 @@ function DemoApp() {
 
   const handleBlur = () => {
     setFocusedNodeId(null);
-  };
-
-  const handleCollapseChange = (nodeId: string, collapsed: boolean) => {
-    setCollapsedNodes(prev => {
-      const newSet = new Set(prev);
-      if (collapsed) {
-        newSet.add(nodeId);
-      } else {
-        newSet.delete(nodeId);
-      }
-      return newSet;
-    });
   };
 
   const handleRemoveNode = (node: BaseNode) => {
@@ -177,11 +178,10 @@ function DemoApp() {
         nodes={nodes}
         focusedNodeId={focusedNodeId}
         callbacks={callbacks}
+        initialCollapsedNodes={collapsedNodes}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onRemoveNode={handleRemoveNode}
-        collapsedNodes={collapsedNodes}
-        onCollapseChange={handleCollapseChange}
       />
 
       <div className="demo-controls">
