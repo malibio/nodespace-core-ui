@@ -369,14 +369,17 @@ export function NodeEditor({
 
   return (
     <>
-      <NodeIndicator 
-        node={node}
-        className="ns-node-indicator"
-        hasChildren={node.children.length > 0}
-        onStatusChange={() => {
-          callbacks.onNodesChange?.([...nodes]); // Trigger re-render when status changes
-        }}
-      />
+      {/* Only show NodeIndicator for non-task nodes - TaskNodes handle their own checkbox */}
+      {node.getNodeType() !== 'task' && (
+        <NodeIndicator 
+          node={node}
+          className="ns-node-indicator"
+          hasChildren={node.children.length > 0}
+          onStatusChange={() => {
+            callbacks.onNodesChange?.([...nodes]); // Trigger re-render when status changes
+          }}
+        />
+      )}
       
       <NodeEditorFactory
         node={node}

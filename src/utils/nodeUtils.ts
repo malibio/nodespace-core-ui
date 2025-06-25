@@ -213,15 +213,12 @@ export class NodeFactory {
   static createNodeByType(nodeType: string, content: string = ''): BaseNode {
     switch (nodeType) {
       case 'text':
-        const { TextNode } = require('../nodes');
         return new TextNode(content);
       
       case 'task':
-        const { TaskNode } = require('../nodes');
         return new TaskNode(content);
       
       case 'ai-chat':
-        const { AIChatNode } = require('../nodes');
         return new AIChatNode(content);
       
       // Future node types will be added here as they're implemented
