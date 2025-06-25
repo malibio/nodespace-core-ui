@@ -15,10 +15,11 @@ interface RenderNodeTreeProps {
   collapsedNodes: Set<string>;
   collapsibleNodeTypes: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
+  onFocusedNodeIdChange: (nodeId: string | null) => void;
 }
 
 export function RenderNodeTree(props: RenderNodeTreeProps) {
-  const { nodes, totalNodeCount, focusedNodeId, textareaRefs, onRemoveNode, callbacks, onFocus, onBlur, collapsedNodes, collapsibleNodeTypes, onCollapseChange } = props;
+  const { nodes, totalNodeCount, focusedNodeId, textareaRefs, onRemoveNode, callbacks, onFocus, onBlur, collapsedNodes, collapsibleNodeTypes, onCollapseChange, onFocusedNodeIdChange } = props;
   const isRemoveDisabled = totalNodeCount <= 1;
   
   // Shared navigation state using React Context or a simple ref
@@ -46,6 +47,7 @@ export function RenderNodeTree(props: RenderNodeTreeProps) {
           collapsedNodes={collapsedNodes}
           collapsibleNodeTypes={collapsibleNodeTypes}
           onCollapseChange={onCollapseChange}
+          onFocusedNodeIdChange={onFocusedNodeIdChange}
         />
       ))}
     </div>

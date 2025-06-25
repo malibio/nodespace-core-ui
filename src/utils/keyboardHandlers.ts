@@ -1,4 +1,5 @@
 import { BaseNode } from '../nodes';
+import { NodeSpaceCallbacks } from '../hierarchy/NodeEditor';
 
 /**
  * Context information available to keyboard handlers
@@ -8,11 +9,7 @@ export interface EditContext {
   content: string;
   allNodes: BaseNode[];
   textareaRefs: React.MutableRefObject<{ [key: string]: HTMLTextAreaElement | null }>;
-  callbacks: {
-    onNodesChange?: (nodes: BaseNode[]) => void;
-    onNodeChange?: (nodeId: string, content: string) => void;
-    onStructureChange?: (operation: string, nodeId: string) => void;
-  };
+  callbacks: NodeSpaceCallbacks;
   collapsedNodes?: Set<string>;
 }
 
@@ -25,6 +22,11 @@ export interface KeyboardResult {
   focusNodeId?: string;
   cursorPosition?: number;
   preventDefault?: boolean;
+  // For async operations that need ID synchronization
+  asyncOperation?: {
+    temporaryNodeId: string;
+    realNodeIdPromise: Promise<string>;
+  };
 }
 
 /**

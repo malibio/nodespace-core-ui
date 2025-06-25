@@ -13,7 +13,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   }
   
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
-    const { cursorPosition, content } = context;
+    const { cursorPosition, content, callbacks } = context;
     
     // Special case: cursor at beginning - create empty node above
     if (cursorPosition === 0) {
@@ -34,12 +34,28 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
         updatedNodes.splice(rootIndex, 0, newNode); // Insert before current node
       }
       
+      // Fire semantic node creation event and handle ID synchronization
+      let asyncOperation;
+      if (callbacks.onNodeCreate) {
+        const result = callbacks.onNodeCreate('', node.parent?.getNodeId(), newNode.getNodeType());
+        if (result instanceof Promise) {
+          asyncOperation = {
+            temporaryNodeId: newNode.getNodeId(),
+            realNodeIdPromise: result
+          };
+        } else if (typeof result === 'string') {
+          // Synchronous case - update ID immediately
+          newNode.setNodeId(result);
+        }
+      }
+      
       return {
         handled: true,
         newNodes: updatedNodes,
         focusNodeId: node.getNodeId(), // Stay focused on original node
         cursorPosition: 0, // Cursor stays at beginning of original node
-        preventDefault: true
+        preventDefault: true,
+        asyncOperation
       };
     }
     
@@ -83,17 +99,33 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       updatedNodes.splice(rootIndex + 1, 0, newNode);
     }
     
+    // Fire semantic node creation event and handle ID synchronization
+    let asyncOperation;
+    if (callbacks.onNodeCreate) {
+      const result = callbacks.onNodeCreate(rightContent, node.parent?.getNodeId(), newNode.getNodeType());
+      if (result instanceof Promise) {
+        asyncOperation = {
+          temporaryNodeId: newNode.getNodeId(),
+          realNodeIdPromise: result
+        };
+      } else if (typeof result === 'string') {
+        // Synchronous case - update ID immediately
+        newNode.setNodeId(result);
+      }
+    }
+    
     return {
       handled: true,
       newNodes: updatedNodes,
       focusNodeId: newNode.getNodeId(),
       cursorPosition: 0,
-      preventDefault: true
+      preventDefault: true,
+      asyncOperation
     };
   }
   
   handleBackspace(node: BaseNode, context: EditContext): KeyboardResult {
-    const { cursorPosition, allNodes, collapsedNodes } = context;
+    const { cursorPosition, allNodes, collapsedNodes, callbacks } = context;
     
     if (cursorPosition !== 0) {
       return { handled: false };
@@ -111,8 +143,15 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     const currentContent = node.getContent();
     
     if (currentContent.trim() === '') {
+      const nodeId = node.getNodeId();
+      
       // Remove empty node
       this.removeNodeFromTree(node, allNodes);
+      
+      // Fire semantic deletion event
+      if (callbacks.onNodeDelete) {
+        callbacks.onNodeDelete(nodeId);
+      }
       
       return {
         handled: true,
@@ -128,12 +167,19 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       
       prevNode.setContent(joinedContent);
       
+      const nodeId = node.getNodeId();
+      
       // Handle children transfer before removing the node using sophisticated logic
       if (node.children.length > 0) {
         this.transferChildrenWithDepthPreservation(node, prevNode, allNodes, collapsedNodes);
       }
       
       this.removeNodeFromTree(node, allNodes);
+      
+      // Fire semantic deletion event
+      if (callbacks.onNodeDelete) {
+        callbacks.onNodeDelete(nodeId);
+      }
       
       return {
         handled: true,
@@ -146,7 +192,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   }
   
   handleDelete(node: BaseNode, context: EditContext): KeyboardResult {
-    const { cursorPosition, content, allNodes, collapsedNodes } = context;
+    const { cursorPosition, content, allNodes, collapsedNodes, callbacks } = context;
     
     if (cursorPosition !== content.length) {
       return { handled: false };
@@ -172,12 +218,19 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     const joinedContent = currentContent + nextContent;
     node.setContent(joinedContent);
     
+    const nextNodeId = nextNode.getNodeId();
+    
     // Transfer children from next node with depth preservation
     if (nextNode.children.length > 0) {
       this.transferChildrenWithDepthPreservation(nextNode, node, allNodes, collapsedNodes);
     }
     
     this.removeNodeFromTree(nextNode, allNodes);
+    
+    // Fire semantic deletion event
+    if (callbacks.onNodeDelete) {
+      callbacks.onNodeDelete(nextNodeId);
+    }
     
     return {
       handled: true,
@@ -189,11 +242,16 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   }
   
   handleTab(node: BaseNode, context: EditContext): KeyboardResult {
-    const { allNodes } = context;
+    const { allNodes, callbacks } = context;
     
     const success = indentNode(allNodes, node.getNodeId());
     
     if (success) {
+      // Fire semantic structure change event
+      if (callbacks.onNodeStructureChange) {
+        callbacks.onNodeStructureChange('indent', node.getNodeId());
+      }
+      
       return {
         handled: true,
         newNodes: [...allNodes],
@@ -206,11 +264,16 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   }
   
   handleShiftTab(node: BaseNode, context: EditContext): KeyboardResult {
-    const { allNodes } = context;
+    const { allNodes, callbacks } = context;
     
     const success = outdentNode(allNodes, node.getNodeId());
     
     if (success) {
+      // Fire semantic structure change event
+      if (callbacks.onNodeStructureChange) {
+        callbacks.onNodeStructureChange('outdent', node.getNodeId());
+      }
+      
       return {
         handled: true,
         newNodes: [...allNodes],

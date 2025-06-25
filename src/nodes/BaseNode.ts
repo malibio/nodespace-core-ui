@@ -63,6 +63,11 @@ export abstract class BaseNode {
     return this.__nodeId;
   }
 
+  // Internal method to update node ID (used for backend synchronization)
+  setNodeId(newId: string): void {
+    this.__nodeId = newId;
+  }
+
   getNodeType(): string {
     return this.__nodeType;
   }

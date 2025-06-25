@@ -4,13 +4,15 @@ import { NodeIndicator } from '../NodeIndicator';
 import { NodeEditorFactory } from '../editors';
 import { SlashCommandModal, DEFAULT_SLASH_OPTIONS } from '../SlashCommandModal';
 import type { SlashCommandOption } from '../SlashCommandModal';
-import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory } from '../utils';
+import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory, updateNodeId } from '../utils';
 import type { KeyboardResult } from '../utils';
 
 export interface NodeSpaceCallbacks {
   onNodesChange?: (nodes: BaseNode[]) => void;
   onNodeChange?: (nodeId: string, content: string) => void;
-  onStructureChange?: (operation: string, nodeId: string) => void;
+  onNodeCreate?: (content: string, parentId?: string, nodeType?: string) => Promise<string> | string;
+  onNodeDelete?: (nodeId: string) => void;
+  onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 }
 
 interface NodeEditorProps {
@@ -26,6 +28,9 @@ interface NodeEditorProps {
   onBlur: () => void;
   navigationStateRef: React.MutableRefObject<{ preferredColumn: number | null; resetCounter: number }>;
   collapsedNodes?: Set<string>;
+  // Additional props for ID synchronization
+  focusedNodeId: string | null;
+  onFocusedNodeIdChange: (nodeId: string | null) => void;
 }
 
 // Helper function to calculate node depth in hierarchy
@@ -50,7 +55,9 @@ export function NodeEditor({
   onFocus,
   onBlur,
   navigationStateRef,
-  collapsedNodes
+  collapsedNodes,
+  focusedNodeId,
+  onFocusedNodeIdChange
 }: NodeEditorProps) {
   const nodeId = node.getNodeId();
   
@@ -64,6 +71,9 @@ export function NodeEditor({
   
   // Reference to update modal position function for scroll handling
   const updateModalPositionRef = React.useRef<(() => void) | null>(null);
+  
+  // Debounced content change handling
+  const contentChangeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Add scroll event listener to update modal position when scrolling
   React.useEffect(() => {
@@ -84,6 +94,15 @@ export function NodeEditor({
       window.removeEventListener('resize', handleScroll);
     };
   }, [showSlashModal]);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (contentChangeTimeoutRef.current) {
+        clearTimeout(contentChangeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const resetNavigationState = () => {
     navigationStateRef.current.preferredColumn = null;
@@ -336,6 +355,33 @@ export function NodeEditor({
         callbacks.onNodesChange?.(result.newNodes);
       }
       
+      // Handle async operations (ID synchronization)
+      if (result.asyncOperation) {
+        const { temporaryNodeId, realNodeIdPromise } = result.asyncOperation;
+        
+        realNodeIdPromise.then((realId) => {
+          // Update the node ID and all references
+          const updatedFocusedNodeId = updateNodeId(
+            result.newNodes || nodes,
+            temporaryNodeId,
+            realId,
+            textareaRefs,
+            focusedNodeId
+          );
+          
+          // Update focused node ID if it changed
+          if (updatedFocusedNodeId !== focusedNodeId) {
+            onFocusedNodeIdChange(updatedFocusedNodeId);
+          }
+          
+          // Trigger re-render to reflect ID changes
+          callbacks.onNodesChange?.(result.newNodes || [...nodes]);
+        }).catch((error) => {
+          console.error('Failed to synchronize node ID:', error);
+          // Handle error gracefully - node will keep temporary ID
+        });
+      }
+
       if (result.focusNodeId && result.cursorPosition !== undefined) {
         setTimeout(() => {
           const targetTextarea = textareaRefs.current[result.focusNodeId!];
@@ -363,9 +409,10 @@ export function NodeEditor({
     resetNavigationState();
   };
 
-  const handleRemove = () => {
-    onRemoveNode(node);
-  };
+  // Note: handleRemove not currently used but kept for potential future use
+  // const handleRemove = () => {
+  //   onRemoveNode(node);
+  // };
 
   return (
     <>
@@ -390,10 +437,19 @@ export function NodeEditor({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         onContentChange={(content) => {
-          callbacks.onNodeChange?.(nodeId, content);
+          // Always update local state immediately for responsive UI
           callbacks.onNodesChange?.([...nodes]); // Ensure re-render for content changes
+          
           // Reset preferred column when user types (changes content)
           resetNavigationState();
+          
+          // Debounce the semantic onNodeChange callback
+          if (contentChangeTimeoutRef.current) {
+            clearTimeout(contentChangeTimeoutRef.current);
+          }
+          contentChangeTimeoutRef.current = setTimeout(() => {
+            callbacks.onNodeChange?.(nodeId, content);
+          }, 300); // 300ms debounce delay
           
           // Check for slash command after content changes
           const textarea = textareaRefs.current[nodeId];

@@ -17,6 +17,7 @@ interface NodeComponentProps {
   collapsedNodes: Set<string>;
   collapsibleNodeTypes: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
+  onFocusedNodeIdChange: (nodeId: string | null) => void;
 }
 
 export function NodeComponent({
@@ -33,7 +34,8 @@ export function NodeComponent({
   navigationStateRef,
   collapsedNodes,
   collapsibleNodeTypes,
-  onCollapseChange
+  onCollapseChange,
+  onFocusedNodeIdChange
 }: NodeComponentProps) {
   const nodeId = node.getNodeId();
   const isFocused = focusedNodeId === nodeId;
@@ -314,8 +316,8 @@ export function NodeComponent({
       onCollapseChange(nodeId, !isCollapsed);
     }
     // Trigger callbacks to notify parent of structure change
-    if (callbacks.onStructureChange) {
-      callbacks.onStructureChange('toggle-collapse', nodeId);
+    if (callbacks.onNodeStructureChange) {
+      callbacks.onNodeStructureChange('move', nodeId, { operation: 'toggle-collapse' });
     }
   };
 
@@ -379,6 +381,8 @@ export function NodeComponent({
           onBlur={onBlur}
           navigationStateRef={navigationStateRef}
           collapsedNodes={collapsedNodes}
+          focusedNodeId={focusedNodeId}
+          onFocusedNodeIdChange={onFocusedNodeIdChange}
         />
       </div>
 
@@ -402,6 +406,7 @@ export function NodeComponent({
               collapsedNodes={collapsedNodes}
               collapsibleNodeTypes={collapsibleNodeTypes}
               onCollapseChange={onCollapseChange}
+              onFocusedNodeIdChange={onFocusedNodeIdChange}
             />
           ))}
         </div>

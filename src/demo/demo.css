@@ -105,3 +105,61 @@
 .ns-dark-mode .demo-help strong {
   color: #e0e0e0;
 }
+
+.demo-event-log {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.demo-event-log h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.event-log-content {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.event-log-item {
+  padding: 4px 0;
+  border-bottom: 1px solid #e9ecef;
+  color: #495057;
+}
+
+.event-log-item:last-child {
+  border-bottom: none;
+}
+
+.event-log-empty {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Dark mode for event log */
+.ns-dark-mode .demo-event-log {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.ns-dark-mode .demo-event-log h3 {
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .event-log-item {
+  border-bottom-color: #444;
+  color: #ccc;
+}
+
+.ns-dark-mode .event-log-empty {
+  color: #888;
+}
