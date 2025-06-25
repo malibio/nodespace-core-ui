@@ -1,6 +1,103 @@
 /* NodeSpace UI - Component Library CSS */
 /* This file will be bundled with the package */
 
+/* Collapsed State Persistence Loading Components */
+.ns-collapsed-state-loader {
+  position: relative;
+}
+
+.ns-loading-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.ns-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e9ecef;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: ns-spin 1s linear infinite;
+}
+
+@keyframes ns-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ns-loading-text {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.ns-loading-content {
+  transition: opacity 0.2s ease;
+}
+
+.ns-error-banner {
+  margin-bottom: 8px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.ns-error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ns-error-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.ns-error-details {
+  flex: 1;
+}
+
+.ns-error-title {
+  font-weight: 600;
+  color: #856404;
+  margin-bottom: 2px;
+}
+
+.ns-error-message {
+  font-size: 14px;
+  color: #856404;
+}
+
+.ns-retry-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ns-retry-button:hover {
+  background: #0056b3;
+}
+
+.ns-retry-button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.ns-error-fallback-content {
+  /* Normal content rendering even with error state */
+}
+
 .ns-editor-container { padding: 20px; }
 .ns-editor-header { margin-bottom: 20px; }
 .ns-editor-status { font-size: 14px; color: #666; }

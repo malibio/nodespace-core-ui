@@ -15,8 +15,15 @@ export interface NodeSpaceCallbacks {
   onNodeDelete?: (nodeId: string) => void;
   onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 
-  // NEW: Collapsed state management
+  // Collapsed state management
   onCollapseStateChange?: (nodeId: string, collapsed: boolean) => void;
+
+  // NEW: Async persistence callbacks
+  onLoadCollapsedState?: () => Promise<Set<string>>;
+  onSaveCollapsedState?: (collapsedNodes: Set<string>) => Promise<void>;
+
+  // NEW: Batch operations for performance
+  onBatchCollapseChange?: (changes: Array<{nodeId: string, collapsed: boolean}>) => Promise<void>;
 }
 
 interface NodeEditorProps {
