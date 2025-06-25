@@ -15,7 +15,7 @@ export class TaskNodeKeyboardHandler implements NodeKeyboardHandler {
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
     // For tasks, Enter could create a new task (instead of splitting content)
     // For now, use similar logic to text but could be customized
-    const { cursorPosition, content } = context;
+    const { cursorPosition, content, callbacks } = context;
     
     const leftContent = content.substring(0, cursorPosition);
     const rightContent = content.substring(cursorPosition);
@@ -55,12 +55,28 @@ export class TaskNodeKeyboardHandler implements NodeKeyboardHandler {
       updatedNodes.splice(rootIndex + 1, 0, newNode);
     }
     
+    // Fire semantic node creation event and handle ID synchronization
+    let asyncOperation;
+    if (callbacks.onNodeCreate) {
+      const result = callbacks.onNodeCreate(rightContent, node.parent?.getNodeId(), newNode.getNodeType());
+      if (result instanceof Promise) {
+        asyncOperation = {
+          temporaryNodeId: newNode.getNodeId(),
+          realNodeIdPromise: result
+        };
+      } else if (typeof result === 'string') {
+        // Synchronous case - update ID immediately
+        newNode.setNodeId(result);
+      }
+    }
+    
     return {
       handled: true,
       newNodes: updatedNodes,
       focusNodeId: newNode.getNodeId(),
       cursorPosition: 0,
-      preventDefault: true
+      preventDefault: true,
+      asyncOperation
     };
   }
   
@@ -91,11 +107,16 @@ export class TaskNodeKeyboardHandler implements NodeKeyboardHandler {
   handleTab(node: BaseNode, context: EditContext): KeyboardResult {
     // Tasks could have different indentation rules
     // For now, use same logic as text nodes
-    const { allNodes } = context;
+    const { allNodes, callbacks } = context;
     
     const success = indentNode(allNodes, node.getNodeId());
     
     if (success) {
+      // Fire semantic structure change event
+      if (callbacks.onNodeStructureChange) {
+        callbacks.onNodeStructureChange('indent', node.getNodeId());
+      }
+      
       return {
         handled: true,
         newNodes: [...allNodes],
@@ -110,11 +131,16 @@ export class TaskNodeKeyboardHandler implements NodeKeyboardHandler {
   handleShiftTab(node: BaseNode, context: EditContext): KeyboardResult {
     // Tasks could have different outdentation rules
     // For now, use same logic as text nodes
-    const { allNodes } = context;
+    const { allNodes, callbacks } = context;
     
     const success = outdentNode(allNodes, node.getNodeId());
     
     if (success) {
+      // Fire semantic structure change event
+      if (callbacks.onNodeStructureChange) {
+        callbacks.onNodeStructureChange('outdent', node.getNodeId());
+      }
+      
       return {
         handled: true,
         newNodes: [...allNodes],

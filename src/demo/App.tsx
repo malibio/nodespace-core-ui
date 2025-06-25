@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { TextNode, BaseNode, TaskNode } from '../nodes';
 import NodeSpaceEditor from '../NodeSpaceEditor';
-import { NodeSpaceCallbacks } from '../components';
+import { NodeSpaceCallbacks } from '../hierarchy';
 import { countAllNodes } from '../utils';
 import './demo.css';
 
@@ -81,19 +81,41 @@ function DemoApp() {
   
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [eventLog, setEventLog] = useState<string[]>([]);
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   
   const totalNodeCount = countAllNodes(nodes);
+
+  const logEvent = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setEventLog(prev => [...prev.slice(-9), `${timestamp}: ${message}`]);
+  };
 
   const callbacks: NodeSpaceCallbacks = {
     onNodesChange: (newNodes: BaseNode[]) => {
       setNodes(newNodes);
     },
     onNodeChange: (nodeId: string, content: string) => {
-      // Node content changed
+      logEvent(`Content saved (debounced): ${nodeId.slice(0, 8)}... → "${content}"`);
     },
-    onStructureChange: (operation: string, nodeId: string) => {
-      // Structure operation performed
+    onNodeCreate: (content: string, parentId?: string, nodeType?: string) => {
+      const parent = parentId ? parentId.slice(0, 8) + '...' : 'root';
+      logEvent(`Node created: "${content}" (${nodeType}) under ${parent}`);
+      
+      // Simulate async backend ID generation
+      return new Promise<string>((resolve) => {
+        setTimeout(() => {
+          const realBackendId = `backend-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          logEvent(`Backend assigned real ID: ${realBackendId.slice(0, 16)}...`);
+          resolve(realBackendId);
+        }, 100); // 100ms to simulate network delay
+      });
+    },
+    onNodeDelete: (nodeId: string) => {
+      logEvent(`Node deleted: ${nodeId.slice(0, 8)}...`);
+    },
+    onNodeStructureChange: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => {
+      logEvent(`Structure: ${operation} ${nodeId.slice(0, 8)}...`);
     }
   };
 
@@ -169,6 +191,22 @@ function DemoApp() {
         <button onClick={() => setIsDarkMode(!isDarkMode)} className="demo-button">
           {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
         </button>
+        <button onClick={() => setEventLog([])} className="demo-button">
+          Clear Event Log
+        </button>
+      </div>
+
+      <div className="demo-event-log">
+        <h3>Event Log:</h3>
+        <div className="event-log-content">
+          {eventLog.length === 0 ? (
+            <div className="event-log-empty">No events yet. Try creating, editing, or deleting nodes!</div>
+          ) : (
+            eventLog.map((event, index) => (
+              <div key={index} className="event-log-item">{event}</div>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="demo-help">
@@ -181,14 +219,16 @@ function DemoApp() {
           <li><strong>Tab:</strong> Indent node (make child of previous sibling)</li>
           <li><strong>Shift+Tab:</strong> Outdent node (make sibling of parent)</li>
         </ul>
-        <strong>Test Scenarios:</strong>
+        <strong>Event Testing & ID Synchronization:</strong>
         <ul>
-          <li><strong>Root A:</strong> Collapsed - try backspacing "Root B" to see children transfer behavior</li>
-          <li><strong>Root C:</strong> Expanded - try backspacing "Root D" to see different merge behavior</li>
-          <li><strong>Root F:</strong> Try backspacing into deep hierarchy to test depth preservation</li>
+          <li><strong>Node Creation:</strong> Press Enter to split nodes → Watch ID sync from temporary to backend ID</li>
+          <li><strong>Ghost Node Fix:</strong> New nodes get backend IDs asynchronously → Can now edit content after creation</li>
+          <li><strong>Node Deletion:</strong> Use Backspace/Delete to merge nodes and watch deletion events</li>
+          <li><strong>Structure Changes:</strong> Use Tab/Shift+Tab to indent/outdent and watch structure events</li>
+          <li><strong>Content Changes:</strong> Type to see debounced content save events (300ms delay)</li>
         </ul>
         <strong>Hierarchy:</strong>
-        <p>Visual indentation shows parent-child relationships. Children preserve their depth when transferred during merge operations.</p>
+        <p>Visual indentation shows parent-child relationships. Events track all user interactions semantically.</p>
       </div>
     </div>
   );

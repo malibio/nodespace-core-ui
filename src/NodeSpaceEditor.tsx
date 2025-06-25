@@ -63,6 +63,8 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
   }, [externalOnCollapseChange]);
 
   const handleRemoveNode = (node: BaseNode) => {
+    const nodeId = node.getNodeId();
+    
     if (onRemoveNode) {
       onRemoveNode(node);
     } else {
@@ -81,6 +83,11 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
         }
       }
     }
+    
+    // Fire semantic deletion event
+    if (callbacks.onNodeDelete) {
+      callbacks.onNodeDelete(nodeId);
+    }
   };
 
   const handleFocus = (nodeId: string) => {
@@ -94,6 +101,15 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
       onBlur();
     }
   };
+
+  const handleFocusedNodeIdChange = useCallback((newFocusedNodeId: string | null) => {
+    // If we have an external onFocus handler, use it to update focused node
+    if (newFocusedNodeId && onFocus) {
+      onFocus(newFocusedNodeId);
+    } else if (!newFocusedNodeId && onBlur) {
+      onBlur();
+    }
+  }, [onFocus, onBlur]);
 
   return (
     <div className={`ns-editor-container ${className}`}>
@@ -109,6 +125,7 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
         collapsedNodes={collapsedNodes}
         collapsibleNodeTypes={collapsibleNodeTypes}
         onCollapseChange={handleCollapseChange}
+        onFocusedNodeIdChange={handleFocusedNodeIdChange}
       />
     </div>
   );

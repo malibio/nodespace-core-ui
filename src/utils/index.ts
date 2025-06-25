@@ -4,3 +4,4 @@ export { KeyboardHandlerRegistry } from './keyboardHandlers';
 export { TextNodeKeyboardHandler } from './textKeyboardHandler';
 export { TaskNodeKeyboardHandler } from './taskKeyboardHandler';
 export { initializeKeyboardHandlers } from './keyboardRegistry';
+export { updateNodeId } from './nodeIdSync';
