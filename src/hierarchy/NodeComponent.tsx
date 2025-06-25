@@ -43,6 +43,17 @@ export function NodeComponent({
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Helper function to find the correct indicator element (NodeIndicator or TaskNode checkbox)
+  const findIndicatorElement = (container: Element): HTMLElement | null => {
+    // For task nodes, look for the checkbox in TaskNodeEditor
+    const taskCheckbox = container.querySelector('.ns-task-checkbox') as HTMLElement;
+    if (taskCheckbox) return taskCheckbox;
+    
+    // For other nodes, look for the standard node indicator
+    const nodeIndicator = container.querySelector('.ns-node-indicator') as HTMLElement;
+    return nodeIndicator;
+  };
+
   // Calculate and set dynamic line height for parent nodes
   useEffect(() => {
     if (hasChildren && !isCollapsed && containerRef.current) {
@@ -62,7 +73,7 @@ export function NodeComponent({
         
         // Get the indicator from the last direct child (text circle or task box)
         const lastDirectChild = directChildContainers[directChildContainers.length - 1];
-        const lastChildIndicator = lastDirectChild.querySelector('.ns-node-wrapper .ns-node-indicator') as HTMLElement;
+        const lastChildIndicator = findIndicatorElement(lastDirectChild.querySelector('.ns-node-wrapper')!);
         
         if (lastChildIndicator) {
           const containerRect = container.getBoundingClientRect();
@@ -76,21 +87,21 @@ export function NodeComponent({
           container.style.setProperty('--ns-line-height', `${lineHeight}px`);
 
           // Calculate horizontal line positions for each direct child 
-          const parentIndicator = container.querySelector('.ns-node-wrapper .ns-node-indicator') as HTMLElement;
+          const parentIndicator = findIndicatorElement(container.querySelector('.ns-node-wrapper')!);
           if (!parentIndicator) return;
           
           const parentIndicatorRect = parentIndicator.getBoundingClientRect();
           
           // Calculate visual center based on indicator type
           let parentVisualCenterX;
-          const parentNodeType = parentIndicator.getAttribute('data-node-type');
+          const parentNodeType = node.getNodeType(); // Use the node type directly
           
           if (parentNodeType === 'text') {
             // Text circles: 6px circle in 9px container
             parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2);
           } else if (parentNodeType === 'task') {
-            // Task squares: 9px square in 12px container
-            parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2);
+            // Task checkboxes: account for 1-2px right offset of actual checkbox
+            parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2) + 1;
           } else {
             // Default: use geometric center
             parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2);
@@ -104,7 +115,7 @@ export function NodeComponent({
           
           directChildContainers.forEach((childContainer) => {
             const childWrapper = childContainer.querySelector('.ns-node-wrapper') as HTMLElement;
-            const childIndicator = childContainer.querySelector('.ns-node-wrapper .ns-node-indicator') as HTMLElement;
+            const childIndicator = findIndicatorElement(childWrapper);
             const childTriangle = childContainer.querySelector('.ns-collapse-triangle') as HTMLElement;
             
             if (childWrapper && childIndicator) {
@@ -143,7 +154,7 @@ export function NodeComponent({
         if (!container) return false;
         
         // Quick check if elements are positioned (not at 0,0)
-        const indicator = container.querySelector('.ns-node-wrapper .ns-node-indicator') as HTMLElement;
+        const indicator = findIndicatorElement(container.querySelector('.ns-node-wrapper')!);
         if (!indicator) return false;
         
         const rect = indicator.getBoundingClientRect();
