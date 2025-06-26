@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TextNode, BaseNode, TaskNode } from '../nodes';
+import { TextNode, BaseNode, TaskNode, AIChatNode } from '../nodes';
 import NodeSpaceEditor from '../NodeSpaceEditor';
 import { NodeSpaceCallbacks } from '../hierarchy';
 import { countAllNodes } from '../utils';
@@ -121,7 +121,13 @@ function DemoApp() {
     bugTriage.addChild(criticalBugs);
     bugTriage.addChild(minorBugs);
     
-    return [projectNode, docsNode, sprintTasks];
+    // AI Chat Node: NodeSpace AI Assistant (showcasing RAG functionality)
+    const aiAssistant = new AIChatNode('What are the key findings from our user research?');
+    
+    // AI Chat Node 2: Technical Questions
+    const techQuestions = new AIChatNode('How should we implement the authentication system?');
+    
+    return [projectNode, docsNode, sprintTasks, aiAssistant, techQuestions];
   });
   
   // Set up initial collapsed state - Project Planning should be collapsed initially

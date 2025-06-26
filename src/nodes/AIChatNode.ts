@@ -1,5 +1,14 @@
 import { BaseNode } from './BaseNode';
+import { 
+  AIChatNodeData, 
+  ChatSession, 
+  ChatMessage, 
+  MessageRole, 
+  RAGMessageContext,
+  ChatLoadingState
+} from '../types/chat';
 
+// Legacy interface for backward compatibility
 export interface AIChatData {
   question: string;
   response: string;
@@ -14,21 +23,39 @@ export interface AIChatData {
 
 /**
  * Node for AI chat interactions
- * Stores both user questions and AI responses with source attribution
+ * Enhanced with RAG functionality and comprehensive chat session management
+ * Implements the new AIChatNodeData interface while maintaining backward compatibility
  */
 export class AIChatNode extends BaseNode {
   private chatData: AIChatData;
+  private enhancedData: Partial<AIChatNodeData>;
+  private session: ChatSession | null = null;
+  private messages: ChatMessage[] = [];
+  private loadingState: ChatLoadingState = ChatLoadingState.Idle;
 
   constructor(content: string = '', nodeId?: string) {
     super('ai-chat', content, nodeId);
     
-    // Initialize chat-specific data
+    // Initialize legacy chat data for backward compatibility
     this.chatData = {
       question: content,
       response: '',
       isLoading: false,
       error: null,
       sources: []
+    };
+    
+    // Initialize enhanced data structure
+    this.enhancedData = {
+      id: this.getNodeId(),
+      session_id: null,
+      title: content || 'Untitled Chat',
+      is_minimized: false,
+      message_count: 0,
+      date_time_created: new Date(),
+      date_time_modified: new Date(),
+      content: content,
+      node_type: 'ai-chat' as const
     };
   }
 
@@ -46,7 +73,8 @@ export class AIChatNode extends BaseNode {
     svg.style.display = 'block';
     
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M80-120v-80h800v80H80Zm680-160v-560h60v560h-60Zm-600 0 210-560h100l210 560h-96l-50-144H308l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z');
+    // Fixed: Use correct sparkles icon instead of 'A' letter
+    path.setAttribute('d', 'M444-200 298-346l-58 58 204 204 440-440-58-58-382 382ZM80-680v-120q0-33 23.5-56.5T160-880h120v80H160v120H80Zm0 600v-120h80v120h120v80H160q-33 0-56.5-23.5T80-160ZM680-80v-80h120v-120h80v120q0 33-23.5 56.5T800-80H680Zm120-600v-120H680v-80h120q33 0 56.5 23.5T880-800v120h-80Z');
     
     svg.appendChild(path);
     indicator.appendChild(svg);
@@ -118,6 +146,171 @@ export class AIChatNode extends BaseNode {
   setContent(content: string): void {
     super.setContent(content);
     this.chatData.question = content;
+    this.enhancedData.content = content;
+    this.enhancedData.title = content || 'Untitled Chat';
+    this.enhancedData.date_time_modified = new Date();
+  }
+
+  // Enhanced RAG-aware methods
+
+  /**
+   * Get enhanced chat node data conforming to AIChatNodeData interface
+   */
+  getEnhancedData(): AIChatNodeData {
+    return {
+      id: this.getNodeId(),
+      session_id: this.enhancedData.session_id || null,
+      title: this.enhancedData.title || 'Untitled Chat',
+      is_minimized: this.enhancedData.is_minimized || false,
+      last_message_at: this.messages.length > 0 ? this.messages[this.messages.length - 1].timestamp : undefined,
+      message_count: this.messages.length,
+      date_time_created: this.enhancedData.date_time_created || new Date(),
+      date_time_modified: this.enhancedData.date_time_modified || new Date(),
+      content: this.enhancedData.content || '',
+      node_type: 'ai-chat' as const,
+      parent_id: this.parent?.getNodeId()
+    };
+  }
+
+  /**
+   * Set/create chat session for this node
+   */
+  setSession(session: ChatSession): void {
+    this.session = session;
+    this.enhancedData.session_id = session.id;
+    this.messages = session.messages;
+    this.enhancedData.message_count = session.messages.length;
+  }
+
+  /**
+   * Get current chat session
+   */
+  getSession(): ChatSession | null {
+    return this.session;
+  }
+
+  /**
+   * Add a message to the chat session
+   */
+  addMessage(message: ChatMessage): void {
+    this.messages.push(message);
+    this.enhancedData.message_count = this.messages.length;
+    this.enhancedData.last_message_at = message.timestamp;
+    this.enhancedData.date_time_modified = new Date();
+    
+    if (this.session) {
+      this.session.messages = this.messages;
+      this.session.updated_at = new Date();
+    }
+  }
+
+  /**
+   * Get all messages in chronological order
+   */
+  getMessages(): ChatMessage[] {
+    return [...this.messages];
+  }
+
+  /**
+   * Get current loading state
+   */
+  getLoadingState(): ChatLoadingState {
+    return this.loadingState;
+  }
+
+  /**
+   * Set loading state
+   */
+  setLoadingState(state: ChatLoadingState): void {
+    this.loadingState = state;
+    this.chatData.isLoading = state === ChatLoadingState.Processing || state === ChatLoadingState.Generating;
+  }
+
+  /**
+   * Create a chat message from current question
+   */
+  createUserMessage(): ChatMessage {
+    return {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      session_id: this.enhancedData.session_id || '',
+      content: this.getQuestion(),
+      role: MessageRole.User,
+      timestamp: new Date(),
+      sequence_number: this.messages.length + 1
+    };
+  }
+
+  /**
+   * Enhanced RAG response simulation with proper typing
+   */
+  async simulateRAGResponse(): Promise<ChatMessage> {
+    this.setLoadingState(ChatLoadingState.Processing);
+    this.setError(null);
+
+    // Simulate RAG processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    try {
+      const question = this.getQuestion().toLowerCase();
+      let response = '';
+      let ragContext: RAGMessageContext;
+
+      if (question.includes('hello') || question.includes('hi')) {
+        response = 'Hello! I\'m NodeSpace AI. I can help you find information from your knowledge base and answer questions about your content.';
+        ragContext = {
+          sources_used: [],
+          retrieval_score: 0.95,
+          context_tokens: 50,
+          generation_time_ms: 1200,
+          knowledge_summary: 'No specific knowledge retrieved for greeting'
+        };
+      } else if (question.includes('what') || question.includes('how') || question.includes('?')) {
+        response = `Based on your question about "${this.getQuestion()}", here's what I found:\n\nThis is a placeholder AI response with RAG context. The actual AI integration will connect to your NodeSpace knowledge base and provide contextual answers with real source attribution.\n\n**Key Points:**\n- AI responses will be generated from your actual content\n- Source nodes will be properly linked\n- Responses will include relevant context and citations`;
+        
+        ragContext = {
+          sources_used: ['mock-1', 'mock-2', 'mock-3'],
+          retrieval_score: 0.87,
+          context_tokens: 245,
+          generation_time_ms: 1850,
+          knowledge_summary: 'Retrieved content from 3 relevant knowledge sources'
+        };
+      } else {
+        response = `I understand you're asking about "${this.getQuestion()}". This is a placeholder response from the NodeSpace AI system.\n\nOnce integrated with the backend, I'll be able to:\n- Search through your knowledge base\n- Provide contextual answers\n- Show relevant source materials\n- Generate insights from your content`;
+        
+        ragContext = {
+          sources_used: ['mock-4'],
+          retrieval_score: 0.72,
+          context_tokens: 180,
+          generation_time_ms: 1400,
+          knowledge_summary: 'Limited relevant content found'
+        };
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        session_id: this.enhancedData.session_id || '',
+        content: response,
+        role: MessageRole.Assistant,
+        timestamp: new Date(),
+        sequence_number: this.messages.length + 1,
+        rag_context: ragContext
+      };
+
+      this.setResponse(response);
+      this.setSources(ragContext.sources_used.map(id => ({
+        nodeId: id,
+        title: `Knowledge Source ${id}`,
+        type: 'text'
+      })));
+
+      this.setLoadingState(ChatLoadingState.Idle);
+      return assistantMessage;
+
+    } catch (error) {
+      this.setError('Failed to get AI response. Please try again.');
+      this.setLoadingState(ChatLoadingState.Error);
+      throw error;
+    }
   }
 
   // Mock AI response for development
