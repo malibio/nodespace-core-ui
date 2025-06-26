@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { TextNode, BaseNode, TaskNode } from '../nodes';
 import NodeSpaceEditor from '../NodeSpaceEditor';
 import { NodeSpaceCallbacks } from '../hierarchy';
@@ -145,15 +145,9 @@ function DemoApp() {
   };
 
   const handleCollapseStateChange = (nodeId: string, collapsed: boolean) => {
-    setCollapsedNodes(prev => {
-      const newSet = new Set(prev);
-      if (collapsed) {
-        newSet.add(nodeId);
-      } else {
-        newSet.delete(nodeId);
-      }
-      return newSet;
-    });
+    // Only log the event - let persistence hook manage the state
+    const action = collapsed ? 'collapsed' : 'expanded';
+    logEvent(`Node ${action}: ${nodeId.slice(0, 8)}...`);
   };
 
   const callbacks: NodeSpaceCallbacks = {
@@ -182,7 +176,8 @@ function DemoApp() {
     onNodeStructureChange: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => {
       logEvent(`Structure: ${operation} ${nodeId.slice(0, 8)}...`);
     },
-    onCollapseStateChange: handleCollapseStateChange, // NEW
+    // This will be called by the persistence hook for event logging
+    onCollapseStateChange: handleCollapseStateChange
   };
 
   const handleFocus = (nodeId: string) => {
@@ -192,6 +187,17 @@ function DemoApp() {
   const handleBlur = () => {
     setFocusedNodeId(null);
   };
+
+  // Apply dark mode to body element
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('ns-dark-mode');
+      document.documentElement.classList.add('ns-dark-mode');
+    } else {
+      document.body.classList.remove('ns-dark-mode');
+      document.documentElement.classList.remove('ns-dark-mode');
+    }
+  }, [isDarkMode]);
 
   const handleRemoveNode = (node: BaseNode) => {
     if (totalNodeCount > 1) {
@@ -232,6 +238,13 @@ function DemoApp() {
         focusedNodeId={focusedNodeId}
         callbacks={callbacks}
         initialCollapsedNodes={collapsedNodes}
+        persistenceConfig={{
+          enabled: false, // Disable persistence for demo, but enable the hook
+          debounceMs: 500,
+          batchSize: 10,
+          autoSave: false,
+          loadOnMount: false
+        }}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onRemoveNode={handleRemoveNode}

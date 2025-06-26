@@ -28,11 +28,14 @@ export function RenderNodeTree(props: RenderNodeTreeProps) {
     resetCounter: 0
   });
 
+  // Only render root nodes (nodes without parents) to avoid duplicates
+  const rootNodes = nodes.filter(node => !node.parent);
+  
   return (
     <div className="ns-nodes-container">
-      {nodes.map((node) => (
+      {rootNodes.map((node, index) => (
         <NodeComponent
-          key={node.getNodeId()}
+          key={`root-${node.getNodeId()}-${index}`}
           node={node}
           depth={0}
           focusedNodeId={focusedNodeId}

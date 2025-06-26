@@ -198,10 +198,13 @@ export function useCollapsedStatePersistence(
 
   // Toggle individual node collapse
   const toggleNodeCollapse = useCallback((nodeId: string): void => {
+    let wasCollapsed: boolean;
+    let isNowCollapsed: boolean;
+    
     setCollapsedNodesState(prev => {
       const newSet = new Set(prev);
-      const wasCollapsed = newSet.has(nodeId);
-      const isNowCollapsed = !wasCollapsed;
+      wasCollapsed = newSet.has(nodeId);
+      isNowCollapsed = !wasCollapsed;
 
       if (isNowCollapsed) {
         newSet.add(nodeId);
@@ -209,23 +212,26 @@ export function useCollapsedStatePersistence(
         newSet.delete(nodeId);
       }
 
-      // Immediate callback for UI responsiveness
-      if (callbacks?.onCollapseStateChange) {
-        callbacks.onCollapseStateChange(nodeId, isNowCollapsed);
-      }
-
-      // Batch persistence if enabled
-      if (config.enabled && config.autoSave && batchManagerRef.current) {
-        batchManagerRef.current.addOperation(nodeId, isNowCollapsed);
-      } else if (config.enabled && config.autoSave) {
-        // Fallback to direct save
-        saveCollapsedState(newSet).catch(() => {
-          // Error already handled in saveCollapsedState
-        });
-      }
-
       return newSet;
     });
+
+    // Immediate callback for UI responsiveness (moved outside setState)
+    if (callbacks?.onCollapseStateChange) {
+      callbacks.onCollapseStateChange(nodeId, isNowCollapsed!);
+    }
+
+    // Batch persistence if enabled
+    if (config.enabled && config.autoSave && batchManagerRef.current) {
+      batchManagerRef.current.addOperation(nodeId, isNowCollapsed!);
+    } else if (config.enabled && config.autoSave) {
+      // Fallback to direct save - get the updated state
+      setCollapsedNodesState(currentState => {
+        saveCollapsedState(currentState).catch(() => {
+          // Error already handled in saveCollapsedState
+        });
+        return currentState; // No state change, just access current state
+      });
+    }
   }, [callbacks, config.enabled, config.autoSave, saveCollapsedState]);
 
   // Cleanup on unmount

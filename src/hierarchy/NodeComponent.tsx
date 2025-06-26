@@ -385,9 +385,9 @@ export function NodeComponent({
       {/* Only render children if node has children AND is not collapsed */}
       {hasChildren && !isCollapsed && (
         <div className="ns-node-children" data-depth={depth}>
-          {node.children.map((childNode) => (
+          {node.children.map((childNode, index) => (
             <NodeComponent
-              key={childNode.getNodeId()}
+              key={`child-${nodeId}-${childNode.getNodeId()}-${index}`}
               node={childNode}
               depth={depth + 1}
               focusedNodeId={focusedNodeId}

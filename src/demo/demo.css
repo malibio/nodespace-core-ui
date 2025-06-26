@@ -66,9 +66,29 @@
 }
 
 /* Dark mode adjustments for demo */
+.ns-dark-mode {
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  min-height: 100vh; /* Ensure full height coverage */
+}
+
 .ns-dark-mode .demo-container {
   background: #1a1a1a;
   color: #e0e0e0;
+}
+
+/* Ensure body/html elements also get dark background */
+body.ns-dark-mode {
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  margin: 0;
+  padding: 0;
+}
+
+html.ns-dark-mode {
+  background: #1a1a1a !important;
+  margin: 0;
+  padding: 0;
 }
 
 .ns-dark-mode .demo-header {
