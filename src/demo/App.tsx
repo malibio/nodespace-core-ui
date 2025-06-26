@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { TextNode, BaseNode, TaskNode } from '../nodes';
+import React, { useState, useRef, useEffect } from 'react';
+import { TextNode, BaseNode, TaskNode, AIChatNode } from '../nodes';
 import NodeSpaceEditor from '../NodeSpaceEditor';
 import { NodeSpaceCallbacks } from '../hierarchy';
 import { countAllNodes } from '../utils';
@@ -7,74 +7,133 @@ import './demo.css';
 
 function DemoApp() {
   const [nodes, setNodes] = useState<BaseNode[]>(() => {
-    // Create complex test scenarios for backspace behavior testing
+    // Text Node 1: Project Planning (initially collapsed)
+    const projectNode = new TextNode('Project Planning');
+    const phase1 = new TextNode('Phase 1: Research');
+    const research1 = new TextNode('Market Analysis');
+    const research2 = new TextNode('Competitor Research');
+    const deepResearch = new TextNode('Deep Dive: Customer Interviews');
+    const interview1 = new TextNode('Interview: Tech Professionals');
+    const interview2 = new TextNode('Interview: Business Users');
     
-    // Scenario 1: Root A (collapsed) -> Root B with children
-    const rootA = new TextNode('Root A (collapsed)');
-    const childA1 = new TextNode('Child A1 (hidden)');
-    const childA2 = new TextNode('Child A2 (hidden)');
-    rootA.addChild(childA1);
-    rootA.addChild(childA2);
+    projectNode.addChild(phase1);
+    phase1.addChild(research1);
+    phase1.addChild(research2);
+    research1.addChild(deepResearch);
+    deepResearch.addChild(interview1);
+    deepResearch.addChild(interview2);
     
-    const rootB = new TextNode('Root B - DELETE ME');
-    const childB1 = new TextNode('Child B1');
-    const childB2 = new TextNode('Child B2');
-    const grandchildB2a = new TextNode('Grandchild B2a');
-    rootB.addChild(childB1);
-    rootB.addChild(childB2);
-    childB2.addChild(grandchildB2a);
+    const phase2 = new TextNode('Phase 2: Development');
+    const dev1 = new TextNode('Frontend Development');
+    const dev2 = new TextNode('Backend Development');
+    const testing = new TextNode('Testing & QA');
+    const unitTests = new TextNode('Unit Tests');
+    const integrationTests = new TextNode('Integration Tests');
+    const e2eTests = new TextNode('End-to-End Tests');
     
-    // Scenario 2: Root C (expanded) -> Root D with children  
-    const rootC = new TextNode('Root C (expanded)');
-    const childC1 = new TextNode('Child C1 (visible)');
-    const childC2 = new TextNode('Child C2 (visible)');
-    const grandchildC1a = new TextNode('Grandchild C1a');
-    rootC.addChild(childC1);
-    rootC.addChild(childC2);
-    childC1.addChild(grandchildC1a);
-    // rootC stays expanded (default)
+    projectNode.addChild(phase2);
+    phase2.addChild(dev1);
+    phase2.addChild(dev2);
+    phase2.addChild(testing);
+    testing.addChild(unitTests);
+    testing.addChild(integrationTests);
+    testing.addChild(e2eTests);
     
-    const rootD = new TextNode('Root D - DELETE ME TOO');
-    const childD1 = new TextNode('Child D1');
-    const childD2 = new TextNode('Child D2');
-    const grandchildD2a = new TextNode('Grandchild D2a');
-    const greatGrandchildD2a1 = new TextNode('Great-grandchild D2a1');
-    rootD.addChild(childD1);
-    rootD.addChild(childD2);
-    childD2.addChild(grandchildD2a);
-    grandchildD2a.addChild(greatGrandchildD2a1);
+    // Text Node 2: Documentation (expanded)
+    const docsNode = new TextNode('Documentation');
+    const userGuide = new TextNode('User Guide');
+    const gettingStarted = new TextNode('Getting Started');
+    const basicFeatures = new TextNode('Basic Features');
+    const advancedFeatures = new TextNode('Advanced Features');
+    const customization = new TextNode('Customization Options');
+    const themes = new TextNode('Themes & Styling');
+    const plugins = new TextNode('Plugin Development');
     
-    // Scenario 3: Deep hierarchy for complex testing
-    const rootE = new TextNode('Root E (complex hierarchy)');
-    const childE1 = new TextNode('Child E1');
-    const grandchildE1a = new TextNode('Grandchild E1a');
-    const greatGrandchildE1a1 = new TextNode('Great-grandchild E1a1');
-    const greatGrandchildE1a2 = new TextNode('Great-grandchild E1a2');
-    rootE.addChild(childE1);
-    childE1.addChild(grandchildE1a);
-    grandchildE1a.addChild(greatGrandchildE1a1);
-    grandchildE1a.addChild(greatGrandchildE1a2);
+    docsNode.addChild(userGuide);
+    userGuide.addChild(gettingStarted);
+    userGuide.addChild(basicFeatures);
+    userGuide.addChild(advancedFeatures);
+    advancedFeatures.addChild(customization);
+    customization.addChild(themes);
+    customization.addChild(plugins);
     
-    const rootF = new TextNode('Root F - MERGE WITH DEEP NODE');
-    const childF1 = new TextNode('Child F1 (should become sibling of Child E1)');
-    const childF2 = new TextNode('Child F2 (should become sibling of Child E1)');
-    const grandchildF2a = new TextNode('Grandchild F2a (should become sibling of Grandchild E1a)');
-    rootF.addChild(childF1);
-    rootF.addChild(childF2);
-    childF2.addChild(grandchildF2a);
+    const apiDocs = new TextNode('API Documentation');
+    const coreApi = new TextNode('Core API');
+    const endpoints = new TextNode('REST Endpoints');
+    const authentication = new TextNode('Authentication');
+    const examples = new TextNode('Code Examples');
+    const nodeExamples = new TextNode('Node.js Examples');
+    const pythonExamples = new TextNode('Python Examples');
     
-    // TaskNode test scenario
-    const taskRoot = new TaskNode('Task Root');
-    const taskChild = new TaskNode('Task Child');
-    taskRoot.addChild(taskChild);
+    docsNode.addChild(apiDocs);
+    apiDocs.addChild(coreApi);
+    apiDocs.addChild(endpoints);
+    coreApi.addChild(authentication);
+    endpoints.addChild(examples);
+    examples.addChild(nodeExamples);
+    examples.addChild(pythonExamples);
     
-    return [rootA, rootB, rootC, rootD, rootE, rootF, taskRoot];
+    // Task Node: Sprint Tasks (with nested subtasks)
+    const sprintTasks = new TaskNode('Sprint 1 Tasks');
+    const backendTask = new TaskNode('Implement user authentication');
+    const authFeature1 = new TaskNode('Set up JWT middleware');
+    const authFeature2 = new TaskNode('Create login endpoint');
+    const authFeature3 = new TaskNode('Add password hashing');
+    const securityCheck = new TaskNode('Security audit');
+    const penTest = new TaskNode('Penetration testing');
+    
+    sprintTasks.addChild(backendTask);
+    backendTask.addChild(authFeature1);
+    backendTask.addChild(authFeature2);
+    backendTask.addChild(authFeature3);
+    authFeature3.addChild(securityCheck);
+    securityCheck.addChild(penTest);
+    
+    const frontendTask = new TaskNode('Design user interface');
+    const wireframes = new TaskNode('Create wireframes');
+    const mockups = new TaskNode('Design high-fidelity mockups');
+    const prototypes = new TaskNode('Build interactive prototypes');
+    const userTesting = new TaskNode('Conduct user testing');
+    const feedback = new TaskNode('Gather feedback');
+    const iterations = new TaskNode('Design iterations');
+    
+    sprintTasks.addChild(frontendTask);
+    frontendTask.addChild(wireframes);
+    frontendTask.addChild(mockups);
+    frontendTask.addChild(prototypes);
+    prototypes.addChild(userTesting);
+    userTesting.addChild(feedback);
+    feedback.addChild(iterations);
+    
+    const qaTask = new TaskNode('Quality assurance testing');
+    const testPlan = new TaskNode('Write test plan');
+    const automated = new TaskNode('Automated testing setup');
+    const manual = new TaskNode('Manual testing scenarios');
+    const bugTriage = new TaskNode('Bug triage process');
+    const criticalBugs = new TaskNode('Critical bug fixes');
+    const minorBugs = new TaskNode('Minor bug fixes');
+    
+    sprintTasks.addChild(qaTask);
+    qaTask.addChild(testPlan);
+    qaTask.addChild(automated);
+    qaTask.addChild(manual);
+    qaTask.addChild(bugTriage);
+    bugTriage.addChild(criticalBugs);
+    bugTriage.addChild(minorBugs);
+    
+    // AI Chat Node: NodeSpace AI Assistant (showcasing RAG functionality)
+    const aiAssistant = new AIChatNode('What are the key findings from our user research?');
+    
+    // AI Chat Node 2: Technical Questions
+    const techQuestions = new AIChatNode('How should we implement the authentication system?');
+    
+    return [projectNode, docsNode, sprintTasks, aiAssistant, techQuestions];
   });
   
-  // Set up initial collapsed state - rootA should be collapsed initially
+  // Set up initial collapsed state - Project Planning should be collapsed initially
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(() => {
     if (nodes.length > 0) {
-      return new Set([nodes[0].getNodeId()]); // Collapse first node (rootA)
+      return new Set([nodes[0].getNodeId()]); // Collapse first node (Project Planning)
     }
     return new Set();
   });
@@ -89,6 +148,12 @@ function DemoApp() {
   const logEvent = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     setEventLog(prev => [...prev.slice(-9), `${timestamp}: ${message}`]);
+  };
+
+  const handleCollapseStateChange = (nodeId: string, collapsed: boolean) => {
+    // Only log the event - let persistence hook manage the state
+    const action = collapsed ? 'collapsed' : 'expanded';
+    logEvent(`Node ${action}: ${nodeId.slice(0, 8)}...`);
   };
 
   const callbacks: NodeSpaceCallbacks = {
@@ -116,7 +181,9 @@ function DemoApp() {
     },
     onNodeStructureChange: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => {
       logEvent(`Structure: ${operation} ${nodeId.slice(0, 8)}...`);
-    }
+    },
+    // This will be called by the persistence hook for event logging
+    onCollapseStateChange: handleCollapseStateChange
   };
 
   const handleFocus = (nodeId: string) => {
@@ -127,17 +194,16 @@ function DemoApp() {
     setFocusedNodeId(null);
   };
 
-  const handleCollapseChange = (nodeId: string, collapsed: boolean) => {
-    setCollapsedNodes(prev => {
-      const newSet = new Set(prev);
-      if (collapsed) {
-        newSet.add(nodeId);
-      } else {
-        newSet.delete(nodeId);
-      }
-      return newSet;
-    });
-  };
+  // Apply dark mode to body element
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('ns-dark-mode');
+      document.documentElement.classList.add('ns-dark-mode');
+    } else {
+      document.body.classList.remove('ns-dark-mode');
+      document.documentElement.classList.remove('ns-dark-mode');
+    }
+  }, [isDarkMode]);
 
   const handleRemoveNode = (node: BaseNode) => {
     if (totalNodeCount > 1) {
@@ -177,11 +243,17 @@ function DemoApp() {
         nodes={nodes}
         focusedNodeId={focusedNodeId}
         callbacks={callbacks}
+        initialCollapsedNodes={collapsedNodes}
+        persistenceConfig={{
+          enabled: false, // Disable persistence for demo, but enable the hook
+          debounceMs: 500,
+          batchSize: 10,
+          autoSave: false,
+          loadOnMount: false
+        }}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onRemoveNode={handleRemoveNode}
-        collapsedNodes={collapsedNodes}
-        onCollapseChange={handleCollapseChange}
       />
 
       <div className="demo-controls">
@@ -227,7 +299,12 @@ function DemoApp() {
           <li><strong>Structure Changes:</strong> Use Tab/Shift+Tab to indent/outdent and watch structure events</li>
           <li><strong>Content Changes:</strong> Type to see debounced content save events (300ms delay)</li>
         </ul>
-        <strong>Hierarchy:</strong>
+        <strong>Demo Structure:</strong>
+        <ul>
+          <li><strong>Project Planning</strong> (Text Node, initially collapsed) - Deep hierarchy with research phases</li>
+          <li><strong>Documentation</strong> (Text Node, expanded) - Multi-level user guides and API docs</li>
+          <li><strong>Sprint 1 Tasks</strong> (Task Node) - Nested task hierarchy with checkboxes</li>
+        </ul>
         <p>Visual indentation shows parent-child relationships. Events track all user interactions semantically.</p>
       </div>
     </div>

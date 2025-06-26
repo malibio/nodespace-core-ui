@@ -1,6 +1,118 @@
 /* NodeSpace UI - Component Library CSS */
 /* This file will be bundled with the package */
 
+/* CSS Variables Documentation
+ * The following variables can be provided by the parent application for theming:
+ * 
+ * Core Theme Variables:
+ * --ns-canvas-bg: Canvas/editor background color (unified background for all textareas)
+ * --ns-app-bg: Main application background (behind the canvas)
+ * --ns-app-text: Primary text color for content
+ * --ns-border: Standard border color for elements
+ * 
+ * Component-specific Variables (already defined internally):
+ * --ns-circle-color: Node indicator colors
+ * --ns-parent-border-color: Hierarchical line colors
+ * --ns-background-color: Background color for overlays
+ */
+
+/* Collapsed State Persistence Loading Components */
+.ns-collapsed-state-loader {
+  position: relative;
+}
+
+.ns-loading-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.ns-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e9ecef;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: ns-spin 1s linear infinite;
+}
+
+@keyframes ns-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ns-loading-text {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.ns-loading-content {
+  transition: opacity 0.2s ease;
+}
+
+.ns-error-banner {
+  margin-bottom: 8px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.ns-error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ns-error-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.ns-error-details {
+  flex: 1;
+}
+
+.ns-error-title {
+  font-weight: 600;
+  color: #856404;
+  margin-bottom: 2px;
+}
+
+.ns-error-message {
+  font-size: 14px;
+  color: #856404;
+}
+
+.ns-retry-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ns-retry-button:hover {
+  background: #0056b3;
+}
+
+.ns-retry-button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.ns-error-fallback-content {
+  /* Normal content rendering even with error state */
+}
+
 .ns-editor-container { padding: 20px; }
 .ns-editor-header { margin-bottom: 20px; }
 .ns-editor-status { font-size: 14px; color: #666; }
@@ -8,8 +120,11 @@
 .ns-nodes-container {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  background: inherit;
+  gap: 0; /* Remove spacing between nodes */
+  background: var(--ns-canvas-bg, #fafafa); /* Themeable canvas background */
+  padding: 12px; /* Add padding around the entire node area */
+  border-radius: 8px; /* Rounded corners for the container */
+  border: 1px solid #e0e0e0; /* Subtle border */
 }
 
 /* Hierarchical structure */
@@ -24,6 +139,11 @@
   gap: 4px;
   align-items: flex-start;
   margin-left: calc(var(--depth, 0) * 18px);
+}
+
+/* Add extra spacing between triangle and indicator for root nodes only */
+.ns-node-wrapper[data-depth="0"] {
+  gap: 6px;
 }
 
 .ns-node-wrapper[data-depth="0"] { --depth: 0; }
@@ -45,7 +165,7 @@
   /* Position horizontally centered with THIS node's circle (dynamically calculated) */
   left: var(--ns-vertical-line-left, calc(21px + (var(--depth, 0) * 24px))); /* Dynamic position with fallback */
   top: 20.5px; /* Starting just below the circle */
-  width: 0.5px;
+  width: 0px; /* Remove width to eliminate background line */
   /* Dynamic height calculated from last child circle position */
   height: var(--ns-line-height, 2000px); /* Fallback to large height */
   border-left: 0.5px dotted var(--ns-parent-border-color, #808080);
@@ -61,7 +181,7 @@
   left: var(--ns-horizontal-line-left, -100px); /* Fallback positions off-screen */
   top: var(--ns-horizontal-line-top, -100px);
   width: var(--ns-horizontal-line-width, 0px);
-  height: 0.5px;
+  height: 0px; /* Remove height to eliminate background line */
   border-top: 0.5px dotted var(--ns-parent-border-color, #808080);
   background-color: transparent;
   z-index: 1;
@@ -79,52 +199,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 16px;
+  min-width: 12px; /* Match the specific indicator widths */
 }
 
-/* Override min-width for text nodes to match triangle width */
 .ns-node-indicator[data-node-type="text"] {
-  position: relative;
-  width: 12px !important;
-  height: 12px !important;
-  flex-shrink: 0 !important;
-  margin-top: 9.5px !important;
+  display: none;
+}
+
+/* Text editor container with SVG circle */
+.ns-text-editor-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.ns-text-indicator {
+  cursor: default;
+  margin-top: 11px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 12px !important;
-}
-
-.ns-node-indicator[data-node-type="text"]::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 9px;
-  height: 9px;
-  background-color: transparent;
-  border-radius: 50%;
-  display: block;
-  z-index: 1;
-}
-
-.ns-node-indicator[data-node-type="text"]::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 6px;
-  height: 6px;
-  background-color: var(--ns-circle-color, black);
-  border-radius: 50%;
-  display: block;
-  z-index: 2;
-}
-
-.ns-node-indicator[data-node-type="text"][data-has-children="true"]::before {
-  background-color: var(--ns-parent-border-color, #808080);
+  width: 12px;
+  height: 12px;
 }
 
 .ns-node-textarea {
@@ -173,11 +271,14 @@
   width: 12px !important;
   height: 12px !important;
   flex-shrink: 0 !important;
-  margin-top: 9.5px !important;
+  flex-grow: 0 !important;
+  margin-top: 11px !important; /* Match task node margin-top */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 12px !important;
 }
 
 /* Back box - 12x12px, transparent by default, visible when has children */
@@ -284,11 +385,10 @@
   min-width: 12px !important;
 }
 
-/* Collapse triangle styling - relative positioned with transform for dynamic placement */
 .ns-collapse-triangle {
   width: 9px;
   height: 9px;
-  margin-top: 11px;
+  margin-top: 11.2px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -299,14 +399,12 @@
   z-index: 10;
 }
 
-/* Spacer maintains the same flex space as triangle would have taken */
 .ns-collapse-spacer {
   width: 9px;
   height: 9px;
-  margin-top: 11px;
+  margin-top: 11.2px;
   flex-shrink: 0;
   position: relative;
-  /* Ensure spacer takes up the same space as absolutely positioned triangle */
 }
 
 .ns-collapse-triangle::before {
@@ -628,4 +726,199 @@
     font-size: 14px;
     padding: 8px 12px;
   }
+}
+
+/* Dark mode styles - scoped to component level */
+/* These styles apply when .ns-dark-mode class is added to the .ns-editor-container */
+
+/* Editor container dark mode */
+.ns-editor-container.ns-dark-mode {
+  /* Define shared dark mode color variables for consistency */
+  --ns-dark-bg: #1a1a1a;
+  --ns-dark-surface: #2a2a2a;
+  --ns-dark-border: #444;
+  --ns-dark-border-hover: #666;
+  --ns-dark-text: #e0e0e0;
+  --ns-dark-text-muted: #aaa;
+  --ns-dark-surface-hover: #333;
+  
+  background: var(--ns-dark-bg);
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-editor-status {
+  color: var(--ns-dark-text-muted);
+}
+
+/* Canvas container dark mode */
+.ns-editor-container.ns-dark-mode .ns-nodes-container {
+  background: var(--ns-canvas-bg, var(--ns-dark-surface)); /* Themeable dark canvas background */
+  border: 1px solid var(--ns-dark-border); /* Subtle border to define the area */
+}
+
+/* Node text areas */
+.ns-editor-container.ns-dark-mode .ns-node-textarea {
+  background: transparent; /* Keep transparent for unified canvas */
+  color: var(--ns-dark-text);
+  border-color: var(--ns-dark-border);
+}
+
+.ns-editor-container.ns-dark-mode .ns-node-textarea:focus {
+  background: transparent; /* Keep transparent for unified canvas */
+  border-color: var(--ns-dark-border-hover);
+  outline-color: #888;
+}
+
+.ns-editor-container.ns-dark-mode .ns-node-textarea::placeholder {
+  color: #888;
+}
+
+/* Node indicators */
+.ns-editor-container.ns-dark-mode .ns-node-indicator {
+  --ns-circle-color: var(--ns-dark-text);
+  --ns-parent-border-color: #888;
+  --ns-background-color: var(--ns-dark-surface);
+}
+
+/* Hierarchical lines */
+.ns-editor-container.ns-dark-mode .ns-node-wrapper[data-has-children="true"][data-collapsed="false"]::before {
+  background-color: #555;
+}
+
+.ns-editor-container.ns-dark-mode .ns-node-wrapper[data-has-children="true"]::after {
+  background-color: #555;
+}
+
+/* Collapse triangles */
+.ns-editor-container.ns-dark-mode .ns-collapse-triangle {
+  color: var(--ns-dark-text-muted);
+  border-color: transparent transparent transparent var(--ns-dark-text-muted);
+}
+
+.ns-editor-container.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"] {
+  border-color: var(--ns-dark-text-muted) transparent transparent transparent;
+}
+
+.ns-editor-container.ns-dark-mode .ns-collapse-triangle:hover {
+  color: var(--ns-dark-text);
+  border-color: transparent transparent transparent var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"]:hover {
+  border-color: var(--ns-dark-text) transparent transparent transparent;
+}
+
+/* Task nodes */
+.ns-editor-container.ns-dark-mode .ns-task-editor-container {
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-task-checkbox {
+  --ns-circle-color: var(--ns-dark-text);
+  --ns-parent-border-color: #888;
+}
+
+/* AI Chat nodes */
+.ns-editor-container.ns-dark-mode .ns-ai-chat-input {
+  background: var(--ns-dark-surface);
+  color: var(--ns-dark-text);
+  border-color: var(--ns-dark-border);
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-input:focus {
+  background: var(--ns-dark-surface-hover);
+  border-color: #666;
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-response {
+  background: var(--ns-dark-surface);
+  border-color: var(--ns-dark-border);
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-response-content {
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-button {
+  background: var(--ns-dark-surface-hover);
+  border-color: #555;
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-button:hover {
+  background: var(--ns-dark-border);
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-button.primary {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-button.primary:hover {
+  background: #004494;
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-retry {
+  background: #dc2626;
+  color: white;
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-retry:hover {
+  background: #b91c1c;
+}
+
+/* Slash command modal */
+.ns-editor-container.ns-dark-mode .ns-slash-modal {
+  background: var(--ns-dark-surface);
+  border-color: var(--ns-dark-border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.ns-editor-container.ns-dark-mode .ns-slash-option {
+  color: var(--ns-dark-text);
+  border-color: var(--ns-dark-border);
+}
+
+.ns-editor-container.ns-dark-mode .ns-slash-option:hover,
+.ns-editor-container.ns-dark-mode .ns-slash-option.selected {
+  background: var(--ns-dark-surface-hover);
+  color: #fff;
+}
+
+.ns-editor-container.ns-dark-mode .ns-slash-option-label {
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-slash-option-description {
+  color: var(--ns-dark-text-muted);
+}
+
+/* Persistence loading components */
+.ns-editor-container.ns-dark-mode .ns-loading-skeleton {
+  background: var(--ns-dark-surface);
+  border-color: var(--ns-dark-border);
+}
+
+.ns-editor-container.ns-dark-mode .ns-loading-text {
+  color: var(--ns-dark-text-muted);
+}
+
+.ns-editor-container.ns-dark-mode .ns-error-banner {
+  background: #3a2a1a;
+  border-color: #8a6a2a;
+}
+
+.ns-editor-container.ns-dark-mode .ns-error-title,
+.ns-editor-container.ns-dark-mode .ns-error-message {
+  color: #fbbf24;
+}
+
+.ns-editor-container.ns-dark-mode .ns-retry-button {
+  background: #0056b3;
+  color: white;
+}
+
+.ns-editor-container.ns-dark-mode .ns-retry-button:hover {
+  background: #004494;
 }
