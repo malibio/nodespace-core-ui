@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { NodeEditorProps } from './TextNodeEditor';
 import { AIChatNode } from '../nodes';
+import { ChatMessage } from '../types/chat';
+import { RAGSourcePreview } from '../components/RAGSourcePreview';
 
 /**
  * Editor component specifically for AI chat nodes
@@ -20,8 +22,9 @@ export function AIChatNodeEditor({
   // Cast to AIChatNode for type safety
   const chatNode = node as AIChatNode;
   
-  // Local state for UI updates
+  // Local state for UI updates and RAG context tracking
   const [, forceUpdate] = useState({});
+  const [currentAssistantMessage, setCurrentAssistantMessage] = useState<ChatMessage | null>(null);
   const triggerUpdate = useCallback(() => forceUpdate({}), []);
 
   // Handle question input changes
@@ -36,11 +39,19 @@ export function AIChatNodeEditor({
   const handleAsk = async () => {
     if (!chatNode.getQuestion().trim()) return;
     
+    // Add user message to session
+    const userMessage = chatNode.createUserMessage();
+    chatNode.addMessage(userMessage);
+    
     triggerUpdate(); // Update UI to show loading
     try {
-      await chatNode.simulateAIResponse();
+      // Use enhanced RAG functionality instead of legacy simulateAIResponse
+      const assistantMessage = await chatNode.simulateRAGResponse();
+      chatNode.addMessage(assistantMessage);
+      setCurrentAssistantMessage(assistantMessage);
     } catch (error) {
       console.error('Failed to get AI response:', error);
+      setCurrentAssistantMessage(null);
     }
     triggerUpdate(); // Update UI with response
   };
@@ -51,6 +62,7 @@ export function AIChatNodeEditor({
     chatNode.setResponse('');
     chatNode.setError(null);
     chatNode.setSources([]);
+    setCurrentAssistantMessage(null);
     onContentChange('');
     triggerUpdate();
   };
@@ -127,9 +139,33 @@ export function AIChatNodeEditor({
       {/* Response Section */}
       {(response || error || isLoading) && (
         <div className="ns-ai-chat-response-section">
+          {/* Enhanced Loading States */}
+          {isLoading && (
+            <div className="ns-ai-chat-loading">
+              <div className="ns-loading-indicator">
+                <span className="ns-loading-spinner">⟳</span>
+                <span className="ns-loading-text">
+                  {chatNode.getLoadingState() === 'processing' ? 'Searching knowledge base...' : 
+                   chatNode.getLoadingState() === 'generating' ? 'Generating response...' : 
+                   'Processing...'}
+                </span>
+              </div>
+              <div className="ns-loading-context-info">
+                <small>Using RAG to find relevant information</small>
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Error Handling */}
           {error && (
-            <div className="ns-ai-chat-error">
-              <strong>Error:</strong> {error}
+            <div className="ns-ai-chat-error enhanced">
+              <div className="ns-error-icon">⚠️</div>
+              <div className="ns-error-content">
+                <strong>RAG Query Failed:</strong> {error}
+                <div className="ns-error-suggestions">
+                  <small>Try rephrasing your question or check if your knowledge base has relevant content.</small>
+                </div>
+              </div>
               <button 
                 className="ns-ai-chat-retry"
                 onClick={handleAsk}
@@ -169,30 +205,66 @@ export function AIChatNodeEditor({
                 })}
               </div>
 
-              {/* Sources Section (Placeholder) */}
-              {sources.length > 0 && (
+              {/* Enhanced Sources Section with RAG Context */}
+              {(sources.length > 0 || currentAssistantMessage?.rag_context) && (
                 <div className="ns-ai-chat-sources">
                   <div className="ns-ai-chat-sources-header">
-                    <strong>Sources:</strong>
+                    <strong>Knowledge Sources:</strong>
+                    {currentAssistantMessage?.rag_context && (
+                      <span className="ns-rag-indicator">
+                        RAG Enhanced
+                      </span>
+                    )}
                   </div>
-                  <div className="ns-ai-chat-sources-list">
-                    {sources.map((source, index) => (
-                      <div key={index} className="ns-ai-chat-source-item">
-                        <span className="ns-ai-chat-source-icon">
-                          {source.type === 'task' ? '✓' : '📄'}
+                  
+                  {/* Enhanced Source Attribution List */}
+                  {sources.length > 0 && (
+                    <div className="ns-ai-chat-sources-list">
+                      {sources.map((source, index) => (
+                        <RAGSourcePreview
+                          key={index}
+                          source={source}
+                          relevanceScore={currentAssistantMessage?.rag_context?.retrieval_score}
+                          onSourceClick={(nodeId) => {
+                            // TODO: Implement navigation to source node
+                            console.log('Navigate to source:', nodeId);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* RAG Context Metadata */}
+                  {currentAssistantMessage?.rag_context && (
+                    <div className="ns-rag-context-metadata">
+                      <div className="ns-rag-context-summary">
+                        <em>{currentAssistantMessage.rag_context.knowledge_summary}</em>
+                      </div>
+                      <div className="ns-rag-context-stats">
+                        <span className="ns-rag-stat">
+                          <strong>Context Tokens:</strong> {currentAssistantMessage.rag_context.context_tokens}
                         </span>
-                        <span className="ns-ai-chat-source-title">
-                          {source.title}
+                        <span className="ns-rag-stat">
+                          <strong>Generation Time:</strong> {currentAssistantMessage.rag_context.generation_time_ms}ms
                         </span>
-                        <span className="ns-ai-chat-source-type">
-                          ({source.type})
+                        <span className="ns-rag-stat">
+                          <strong>Confidence:</strong> {Math.round(currentAssistantMessage.rag_context.retrieval_score * 100)}%
                         </span>
                       </div>
-                    ))}
-                  </div>
-                  <div className="ns-ai-chat-sources-note">
-                    <em>Note: Source linking not yet implemented</em>
-                  </div>
+                    </div>
+                  )}
+                  
+                  {sources.length === 0 && currentAssistantMessage?.rag_context?.sources_used.length === 0 && (
+                    <div className="ns-ai-chat-sources-note">
+                      <em>No knowledge sources used for this response</em>
+                    </div>
+                  )}
+                  
+                  {sources.length > 0 && (
+                    <div className="ns-ai-chat-sources-note">
+                      <em>Note: Source linking will be available in the full implementation</em>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
