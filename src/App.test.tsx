@@ -31,9 +31,11 @@ test('renders complex node hierarchy with proper structure', () => {
   const nodeIndicators = container.querySelectorAll('.ns-node-indicator');
   expect(nodeIndicators.length).toBeGreaterThan(0);
   
-  // Check for both text and task node types
+  // Check for text node indicators (TaskNodes handle their own checkboxes, not indicators)
   const textIndicators = container.querySelectorAll('.ns-node-indicator[data-node-type="text"]');
-  const taskIndicators = container.querySelectorAll('.ns-node-indicator[data-node-type="task"]');
   expect(textIndicators.length).toBeGreaterThan(0);
-  expect(taskIndicators.length).toBeGreaterThan(0);
+  
+  // TaskNodes should be present but don't use NodeIndicators
+  const taskEditors = container.querySelectorAll('.ns-task-editor-container');
+  expect(taskEditors.length).toBeGreaterThan(0);
 });

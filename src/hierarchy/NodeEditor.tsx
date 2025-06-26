@@ -8,11 +8,22 @@ import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, N
 import type { KeyboardResult } from '../utils';
 
 export interface NodeSpaceCallbacks {
+  // Current semantic callbacks
   onNodesChange?: (nodes: BaseNode[]) => void;
   onNodeChange?: (nodeId: string, content: string) => void;
   onNodeCreate?: (content: string, parentId?: string, nodeType?: string) => Promise<string> | string;
   onNodeDelete?: (nodeId: string) => void;
   onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
+
+  // Collapsed state management
+  onCollapseStateChange?: (nodeId: string, collapsed: boolean) => void;
+
+  // NEW: Async persistence callbacks
+  onLoadCollapsedState?: () => Promise<Set<string>>;
+  onSaveCollapsedState?: (collapsedNodes: Set<string>) => Promise<void>;
+
+  // NEW: Batch operations for performance
+  onBatchCollapseChange?: (changes: Array<{nodeId: string, collapsed: boolean}>) => Promise<void>;
 }
 
 interface NodeEditorProps {

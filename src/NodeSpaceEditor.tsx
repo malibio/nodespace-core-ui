@@ -1,20 +1,32 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { BaseNode } from './nodes';
 import { RenderNodeTree, NodeSpaceCallbacks } from './hierarchy';
 import { countAllNodes } from './utils';
+import { useCollapsedStatePersistence } from './hooks/useCollapsedStatePersistence';
+import { CollapsedStateLoader } from './components/CollapsedStateLoader';
+import type { CollapsePersistenceConfig } from './types/persistence';
 
 export interface NodeSpaceEditorProps {
   nodes: BaseNode[];
   focusedNodeId?: string | null;
-  callbacks: NodeSpaceCallbacks;
+  callbacks?: NodeSpaceCallbacks;
+
+  // Support for collapsed state restoration
+  initialCollapsedNodes?: Set<string>;
+
+  // NEW: Persistence configuration
+  persistenceConfig?: CollapsePersistenceConfig;
+
+  // NEW: Loading state management
+  isLoadingCollapsedState?: boolean;
+  onCollapsedStateLoaded?: () => void;
+
+  // Keep other existing props...
   onFocus?: (nodeId: string) => void;
   onBlur?: () => void;
   onRemoveNode?: (node: BaseNode) => void;
   className?: string;
-  // Optional external collapse state management
-  collapsedNodes?: Set<string>;
   collapsibleNodeTypes?: Set<string>;
-  onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
 }
 
 /**
@@ -28,39 +40,46 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
   nodes,
   focusedNodeId = null,
   callbacks,
+  initialCollapsedNodes,
+  persistenceConfig,
+  isLoadingCollapsedState = false,
+  onCollapsedStateLoaded,
   onFocus,
   onBlur,
   onRemoveNode,
   className = '',
-  collapsedNodes: externalCollapsedNodes,
-  collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity']),
-  onCollapseChange: externalOnCollapseChange
+  collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity'])
 }) => {
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   const totalNodeCount = countAllNodes(nodes);
 
-  // Internal collapse state management
-  const [internalCollapsedNodes, setInternalCollapsedNodes] = useState<Set<string>>(new Set());
-  
-  // Use external state if provided, otherwise use internal state
-  const collapsedNodes = externalCollapsedNodes || internalCollapsedNodes;
-  
-  // Handle collapse changes - use external handler if provided, otherwise update internal state
-  const handleCollapseChange = useCallback((nodeId: string, collapsed: boolean) => {
-    if (externalOnCollapseChange) {
-      externalOnCollapseChange(nodeId, collapsed);
-    } else {
-      setInternalCollapsedNodes(prev => {
-        const newSet = new Set(prev);
-        if (collapsed) {
-          newSet.add(nodeId);
-        } else {
-          newSet.delete(nodeId);
-        }
-        return newSet;
-      });
+  // Replace current state management with persistence hook
+  const {
+    collapsedNodes,
+    toggleNodeCollapse,
+    isLoading: isPersistenceLoading,
+    lastSaveError,
+    retryLoad
+  } = useCollapsedStatePersistence({
+    callbacks,
+    config: persistenceConfig,
+    initialNodes: initialCollapsedNodes
+  });
+
+  // Handle loading state
+  const isActuallyLoading = isLoadingCollapsedState || isPersistenceLoading;
+
+  // Notify parent when loading completes
+  useEffect(() => {
+    if (!isPersistenceLoading && onCollapsedStateLoaded) {
+      onCollapsedStateLoaded();
     }
-  }, [externalOnCollapseChange]);
+  }, [isPersistenceLoading, onCollapsedStateLoaded]);
+
+  // Update collapse handler to use persistence hook
+  const handleNodeCollapseToggle = useCallback((nodeId: string, collapsed: boolean) => {
+    toggleNodeCollapse(nodeId);
+  }, [toggleNodeCollapse]);
 
   const handleRemoveNode = (node: BaseNode) => {
     const nodeId = node.getNodeId();
@@ -72,12 +91,12 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
       if (totalNodeCount > 1) {
         if (node.parent) {
           node.parent.removeChild(node);
-          if (callbacks.onNodesChange) {
+          if (callbacks?.onNodesChange) {
             callbacks.onNodesChange([...nodes]);
           }
         } else {
           const newNodes = nodes.filter(n => n.getNodeId() !== node.getNodeId());
-          if (callbacks.onNodesChange) {
+          if (callbacks?.onNodesChange) {
             callbacks.onNodesChange(newNodes);
           }
         }
@@ -85,7 +104,7 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
     }
     
     // Fire semantic deletion event
-    if (callbacks.onNodeDelete) {
+    if (callbacks?.onNodeDelete) {
       callbacks.onNodeDelete(nodeId);
     }
   };
@@ -112,22 +131,28 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
   }, [onFocus, onBlur]);
 
   return (
-    <div className={`ns-editor-container ${className}`}>
-      <RenderNodeTree
-        nodes={nodes}
-        focusedNodeId={focusedNodeId}
-        textareaRefs={textareaRefs}
-        onRemoveNode={handleRemoveNode}
-        totalNodeCount={totalNodeCount}
-        callbacks={callbacks}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        collapsedNodes={collapsedNodes}
-        collapsibleNodeTypes={collapsibleNodeTypes}
-        onCollapseChange={handleCollapseChange}
-        onFocusedNodeIdChange={handleFocusedNodeIdChange}
-      />
-    </div>
+    <CollapsedStateLoader
+      isLoading={isActuallyLoading}
+      error={lastSaveError}
+      onRetry={retryLoad}
+    >
+      <div className={`ns-editor-container ${className}`}>
+        <RenderNodeTree
+          nodes={nodes}
+          focusedNodeId={focusedNodeId}
+          textareaRefs={textareaRefs}
+          onRemoveNode={handleRemoveNode}
+          totalNodeCount={totalNodeCount}
+          callbacks={callbacks || {}}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          collapsedNodes={collapsedNodes}
+          collapsibleNodeTypes={collapsibleNodeTypes}
+          onCollapseChange={handleNodeCollapseToggle}
+          onFocusedNodeIdChange={handleFocusedNodeIdChange}
+        />
+      </div>
+    </CollapsedStateLoader>
   );
 };
 

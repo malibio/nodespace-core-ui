@@ -17,80 +17,88 @@ export function TaskNodeEditor({
   onContentChange,
   onClick
 }: NodeEditorProps) {
-  // Cast to TaskNode for type safety
   const taskNode = node as TaskNode;
-  
-  // Check if this node has children
   const hasChildren = node.children.length > 0;
-  
-  // Local state for UI updates
   const [, forceUpdate] = useState({});
   const triggerUpdate = useCallback(() => forceUpdate({}), []);
 
-  // Render custom solid box checkbox
   const renderCheckbox = () => {
     const status = taskNode.getStatus();
-    
     return (
-      <div style={{ position: 'relative', width: '10px', height: '10px' }}>
-        {/* 10x10 box behind - only show if node has children */}
+      <div style={{ 
+        position: 'relative', 
+        width: '12px', 
+        height: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         {hasChildren && (
           <svg 
-            width={10} 
-            height={10} 
-            viewBox="0 0 10 10"
-            style={{ position: 'absolute', top: 0, left: '1px' }}
+            width={12} 
+            height={12} 
+            viewBox="0 0 12 12"
+            style={{ 
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
+            }}
           >
             <rect 
-              x="0.5" 
-              y="0.5" 
-              width="9" 
-              height="9" 
+              x="1" 
+              y="1" 
+              width="10" 
+              height="10" 
               rx="2"
               fill="transparent"
               stroke="var(--ns-parent-border-color, #808080)"
-              strokeWidth="2"
+              strokeWidth="1"
             />
           </svg>
         )}
         
-        {/* 8x8 checkbox in front */}
         <svg 
-          width={8} 
-          height={8} 
-          viewBox="0 0 8 8"
-          style={{ position: 'absolute', top: '1px', left: '2px' }}
+          width={9} 
+          height={9} 
+          viewBox="0 0 9 9"
+          style={{ 
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 2
+          }}
         >
-          {/* Solid box background */}
+          
           <rect 
             x="0.5" 
             y="0.5" 
-            width="7" 
-            height="7" 
-            rx="0.5"
+            width="8" 
+            height="8" 
+            rx="1"
             fill={status === 'pending' ? 'transparent' : 'var(--ns-circle-color, black)'}
             stroke="var(--ns-circle-color, black)"
-            strokeWidth="0.8"
+            strokeWidth="1"
           />
           
-          {/* Content based on status */}
           {status === 'in-progress' && (
             <line 
-              x1="2" 
-              y1="4" 
-              x2="6" 
-              y2="4" 
+              x1="2.5" 
+              y1="4.5" 
+              x2="6.5" 
+              y2="4.5" 
               stroke="white" 
-              strokeWidth="1"
+              strokeWidth="1.2"
               strokeLinecap="round"
             />
           )}
           
           {status === 'completed' && (
             <path 
-              d="M2 4l1.5 1.5 2.5-2.5" 
+              d="M2.5 4.5l1.5 1.5 2.5-2.5" 
               stroke="white" 
-              strokeWidth="1" 
+              strokeWidth="1.2" 
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -101,7 +109,7 @@ export function TaskNodeEditor({
     );
   };
 
-  // Handle checkbox click to cycle through statuses
+  
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent textarea focus
     taskNode.cycleThroughStatus();
@@ -115,8 +123,13 @@ export function TaskNodeEditor({
         onClick={handleCheckboxClick}
         style={{
           cursor: 'pointer',
-          marginTop: '10px', // Align with textarea text (adjusted for overlapped boxes)
-          flexShrink: 0
+          marginTop: '10px',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '12px',
+          height: '12px'
         }}
       >
 {renderCheckbox()}
