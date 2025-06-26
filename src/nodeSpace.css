@@ -1,6 +1,21 @@
 /* NodeSpace UI - Component Library CSS */
 /* This file will be bundled with the package */
 
+/* CSS Variables Documentation
+ * The following variables can be provided by the parent application for theming:
+ * 
+ * Core Theme Variables:
+ * --ns-canvas-bg: Canvas/editor background color (unified background for all textareas)
+ * --ns-app-bg: Main application background (behind the canvas)
+ * --ns-app-text: Primary text color for content
+ * --ns-border: Standard border color for elements
+ * 
+ * Component-specific Variables (already defined internally):
+ * --ns-circle-color: Node indicator colors
+ * --ns-parent-border-color: Hierarchical line colors
+ * --ns-background-color: Background color for overlays
+ */
+
 /* Collapsed State Persistence Loading Components */
 .ns-collapsed-state-loader {
   position: relative;
@@ -718,30 +733,39 @@
 
 /* Editor container dark mode */
 .ns-editor-container.ns-dark-mode {
-  background: #1a1a1a;
-  color: #e0e0e0;
+  /* Define shared dark mode color variables for consistency */
+  --ns-dark-bg: #1a1a1a;
+  --ns-dark-surface: #2a2a2a;
+  --ns-dark-border: #444;
+  --ns-dark-border-hover: #666;
+  --ns-dark-text: #e0e0e0;
+  --ns-dark-text-muted: #aaa;
+  --ns-dark-surface-hover: #333;
+  
+  background: var(--ns-dark-bg);
+  color: var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-editor-status {
-  color: #aaa;
+  color: var(--ns-dark-text-muted);
 }
 
 /* Canvas container dark mode */
 .ns-editor-container.ns-dark-mode .ns-nodes-container {
-  background: var(--ns-canvas-bg, #2a2a2a); /* Themeable dark canvas background */
-  border: 1px solid #444; /* Subtle border to define the area */
+  background: var(--ns-canvas-bg, var(--ns-dark-surface)); /* Themeable dark canvas background */
+  border: 1px solid var(--ns-dark-border); /* Subtle border to define the area */
 }
 
 /* Node text areas */
 .ns-editor-container.ns-dark-mode .ns-node-textarea {
   background: transparent; /* Keep transparent for unified canvas */
-  color: #e0e0e0;
-  border-color: #444;
+  color: var(--ns-dark-text);
+  border-color: var(--ns-dark-border);
 }
 
 .ns-editor-container.ns-dark-mode .ns-node-textarea:focus {
   background: transparent; /* Keep transparent for unified canvas */
-  border-color: #666;
+  border-color: var(--ns-dark-border-hover);
   outline-color: #888;
 }
 
@@ -751,9 +775,9 @@
 
 /* Node indicators */
 .ns-editor-container.ns-dark-mode .ns-node-indicator {
-  --ns-circle-color: #e0e0e0;
+  --ns-circle-color: var(--ns-dark-text);
   --ns-parent-border-color: #888;
-  --ns-background-color: #2a2a2a;
+  --ns-background-color: var(--ns-dark-surface);
 }
 
 /* Hierarchical lines */
@@ -767,63 +791,63 @@
 
 /* Collapse triangles */
 .ns-editor-container.ns-dark-mode .ns-collapse-triangle {
-  color: #aaa;
-  border-color: transparent transparent transparent #aaa;
+  color: var(--ns-dark-text-muted);
+  border-color: transparent transparent transparent var(--ns-dark-text-muted);
 }
 
 .ns-editor-container.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"] {
-  border-color: #aaa transparent transparent transparent;
+  border-color: var(--ns-dark-text-muted) transparent transparent transparent;
 }
 
 .ns-editor-container.ns-dark-mode .ns-collapse-triangle:hover {
-  color: #e0e0e0;
-  border-color: transparent transparent transparent #e0e0e0;
+  color: var(--ns-dark-text);
+  border-color: transparent transparent transparent var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"]:hover {
-  border-color: #e0e0e0 transparent transparent transparent;
+  border-color: var(--ns-dark-text) transparent transparent transparent;
 }
 
 /* Task nodes */
 .ns-editor-container.ns-dark-mode .ns-task-editor-container {
-  color: #e0e0e0;
+  color: var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-task-checkbox {
-  --ns-circle-color: #e0e0e0;
+  --ns-circle-color: var(--ns-dark-text);
   --ns-parent-border-color: #888;
 }
 
 /* AI Chat nodes */
 .ns-editor-container.ns-dark-mode .ns-ai-chat-input {
-  background: #2a2a2a;
-  color: #e0e0e0;
-  border-color: #444;
+  background: var(--ns-dark-surface);
+  color: var(--ns-dark-text);
+  border-color: var(--ns-dark-border);
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-input:focus {
-  background: #333;
+  background: var(--ns-dark-surface-hover);
   border-color: #666;
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-response {
-  background: #2a2a2a;
-  border-color: #444;
-  color: #e0e0e0;
+  background: var(--ns-dark-surface);
+  border-color: var(--ns-dark-border);
+  color: var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-response-content {
-  color: #e0e0e0;
+  color: var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-button {
-  background: #333;
+  background: var(--ns-dark-surface-hover);
   border-color: #555;
-  color: #e0e0e0;
+  color: var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-button:hover {
-  background: #444;
+  background: var(--ns-dark-border);
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-button.primary {
@@ -846,38 +870,38 @@
 
 /* Slash command modal */
 .ns-editor-container.ns-dark-mode .ns-slash-modal {
-  background: #2a2a2a;
-  border-color: #444;
+  background: var(--ns-dark-surface);
+  border-color: var(--ns-dark-border);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .ns-editor-container.ns-dark-mode .ns-slash-option {
-  color: #e0e0e0;
-  border-color: #444;
+  color: var(--ns-dark-text);
+  border-color: var(--ns-dark-border);
 }
 
 .ns-editor-container.ns-dark-mode .ns-slash-option:hover,
 .ns-editor-container.ns-dark-mode .ns-slash-option.selected {
-  background: #333;
+  background: var(--ns-dark-surface-hover);
   color: #fff;
 }
 
 .ns-editor-container.ns-dark-mode .ns-slash-option-label {
-  color: #e0e0e0;
+  color: var(--ns-dark-text);
 }
 
 .ns-editor-container.ns-dark-mode .ns-slash-option-description {
-  color: #aaa;
+  color: var(--ns-dark-text-muted);
 }
 
 /* Persistence loading components */
 .ns-editor-container.ns-dark-mode .ns-loading-skeleton {
-  background: #2a2a2a;
-  border-color: #444;
+  background: var(--ns-dark-surface);
+  border-color: var(--ns-dark-border);
 }
 
 .ns-editor-container.ns-dark-mode .ns-loading-text {
-  color: #aaa;
+  color: var(--ns-dark-text-muted);
 }
 
 .ns-editor-container.ns-dark-mode .ns-error-banner {
