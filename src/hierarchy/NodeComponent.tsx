@@ -45,15 +45,23 @@ export function NodeComponent({
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Helper function to find the correct indicator element (NodeIndicator or TaskNode checkbox)
   const findIndicatorElement = (container: Element): HTMLElement | null => {
-    // For task nodes, look for the checkbox in TaskNodeEditor
     const taskCheckbox = container.querySelector('.ns-task-checkbox') as HTMLElement;
     if (taskCheckbox) return taskCheckbox;
     
-    // For other nodes, look for the standard node indicator
+    const textIndicator = container.querySelector('.ns-text-indicator') as HTMLElement;
+    if (textIndicator) return textIndicator;
+    
     const nodeIndicator = container.querySelector('.ns-node-indicator') as HTMLElement;
-    return nodeIndicator;
+    if (nodeIndicator) return nodeIndicator;
+    
+    const textEditor = container.querySelector('.ns-text-editor-container .ns-text-indicator') as HTMLElement;
+    if (textEditor) return textEditor;
+    
+    const taskEditor = container.querySelector('.ns-task-editor-container .ns-task-checkbox') as HTMLElement;
+    if (taskEditor) return taskEditor;
+    
+    return null;
   };
 
   // Calculate and set dynamic line height for parent nodes
@@ -88,30 +96,24 @@ export function NodeComponent({
           
           container.style.setProperty('--ns-line-height', `${lineHeight}px`);
 
-          // Calculate horizontal line positions for each direct child 
           const parentIndicator = findIndicatorElement(container.querySelector('.ns-node-wrapper')!);
           if (!parentIndicator) return;
           
           const parentIndicatorRect = parentIndicator.getBoundingClientRect();
           
-          // Calculate visual center based on indicator type
-          let parentVisualCenterX;
-          const parentNodeType = node.getNodeType(); // Use the node type directly
+          let parentVisualCenterX: number;
+          const parentNodeType = node.getNodeType();
           
           if (parentNodeType === 'text') {
-            // Text circles: 6px circle in 9px container
             parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2);
           } else if (parentNodeType === 'task') {
-            // Task checkboxes: account for 1-2px right offset of actual checkbox
-            parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2) + 1;
+            parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2);
           } else {
-            // Default: use geometric center
             parentVisualCenterX = parentIndicatorRect.left + (parentIndicatorRect.width / 2);
           }
           
           const parentVerticalLineX = parentVisualCenterX;
           
-          // Set vertical line X position dynamically
           const verticalLineLeft = parentVerticalLineX - containerRect.left - 0.5;
           container.style.setProperty('--ns-vertical-line-left', `${verticalLineLeft}px`);
           
@@ -126,22 +128,18 @@ export function NodeComponent({
               const childIndicatorCenterY = childIndicatorRect.top - childContainerRect.top + (childIndicatorRect.height / 2);
               const childIndicatorCenterX = childIndicatorRect.left + (childIndicatorRect.width / 2);
               
-              // Calculate horizontal line positioning
               const horizontalLineStart = parentVerticalLineX - childContainerRect.left;
               const horizontalLineWidth = Math.max(0, childIndicatorCenterX - parentVerticalLineX - 4);
               const horizontalLineY = childIndicatorCenterY - 0.5;
               
-              // Set CSS custom properties for horizontal line
               childWrapper.style.setProperty('--ns-horizontal-line-left', `${horizontalLineStart}px`);
               childWrapper.style.setProperty('--ns-horizontal-line-width', `${horizontalLineWidth}px`);
               childWrapper.style.setProperty('--ns-horizontal-line-top', `${horizontalLineY}px`);
               
-              // Calculate triangle position to center on parent indicator
               if (childTriangle) {
-                // Calculate triangle position relative to the child wrapper
                 const childWrapperRect = childWrapper.getBoundingClientRect();
-                const targetTriangleX = parentVerticalLineX - 4.5; // Where we want triangle center
-                const triangleOffset = targetTriangleX - childWrapperRect.left; // Offset from wrapper's left edge
+                const targetTriangleX = parentVisualCenterX - 4.75;
+                const triangleOffset = targetTriangleX - childWrapperRect.left;
                 
                 childWrapper.style.setProperty('--ns-triangle-left', `${triangleOffset}px`);
               }
@@ -315,10 +313,8 @@ export function NodeComponent({
     if (onCollapseChange) {
       onCollapseChange(nodeId, !isCollapsed);
     }
-    // Trigger callbacks to notify parent of structure change
-    if (callbacks.onNodeStructureChange) {
-      callbacks.onNodeStructureChange('move', nodeId, { operation: 'toggle-collapse' });
-    }
+    // Note: Collapse/expand is purely a UI visibility change, not a structural change
+    // The onCollapseStateChange callback already handles this event appropriately
   };
 
   return (

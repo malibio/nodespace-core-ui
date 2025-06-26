@@ -105,8 +105,11 @@
 .ns-nodes-container {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  background: inherit;
+  gap: 0; /* Remove spacing between nodes */
+  background: #fafafa; /* Light subtle background */
+  padding: 12px; /* Add padding around the entire node area */
+  border-radius: 8px; /* Rounded corners for the container */
+  border: 1px solid #e0e0e0; /* Subtle border */
 }
 
 /* Hierarchical structure */
@@ -121,6 +124,11 @@
   gap: 4px;
   align-items: flex-start;
   margin-left: calc(var(--depth, 0) * 18px);
+}
+
+/* Add extra spacing between triangle and indicator for root nodes only */
+.ns-node-wrapper[data-depth="0"] {
+  gap: 6px;
 }
 
 .ns-node-wrapper[data-depth="0"] { --depth: 0; }
@@ -142,7 +150,7 @@
   /* Position horizontally centered with THIS node's circle (dynamically calculated) */
   left: var(--ns-vertical-line-left, calc(21px + (var(--depth, 0) * 24px))); /* Dynamic position with fallback */
   top: 20.5px; /* Starting just below the circle */
-  width: 0.5px;
+  width: 0px; /* Remove width to eliminate background line */
   /* Dynamic height calculated from last child circle position */
   height: var(--ns-line-height, 2000px); /* Fallback to large height */
   border-left: 0.5px dotted var(--ns-parent-border-color, #808080);
@@ -158,7 +166,7 @@
   left: var(--ns-horizontal-line-left, -100px); /* Fallback positions off-screen */
   top: var(--ns-horizontal-line-top, -100px);
   width: var(--ns-horizontal-line-width, 0px);
-  height: 0.5px;
+  height: 0px; /* Remove height to eliminate background line */
   border-top: 0.5px dotted var(--ns-parent-border-color, #808080);
   background-color: transparent;
   z-index: 1;
@@ -176,52 +184,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 16px;
+  min-width: 12px; /* Match the specific indicator widths */
 }
 
-/* Override min-width for text nodes to match triangle width */
 .ns-node-indicator[data-node-type="text"] {
-  position: relative;
-  width: 12px !important;
-  height: 12px !important;
-  flex-shrink: 0 !important;
-  margin-top: 9.5px !important;
+  display: none;
+}
+
+/* Text editor container with SVG circle */
+.ns-text-editor-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.ns-text-indicator {
+  cursor: default;
+  margin-top: 11px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 12px !important;
-}
-
-.ns-node-indicator[data-node-type="text"]::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 9px;
-  height: 9px;
-  background-color: transparent;
-  border-radius: 50%;
-  display: block;
-  z-index: 1;
-}
-
-.ns-node-indicator[data-node-type="text"]::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 6px;
-  height: 6px;
-  background-color: var(--ns-circle-color, black);
-  border-radius: 50%;
-  display: block;
-  z-index: 2;
-}
-
-.ns-node-indicator[data-node-type="text"][data-has-children="true"]::before {
-  background-color: var(--ns-parent-border-color, #808080);
+  width: 12px;
+  height: 12px;
 }
 
 .ns-node-textarea {
@@ -270,11 +256,14 @@
   width: 12px !important;
   height: 12px !important;
   flex-shrink: 0 !important;
-  margin-top: 9.5px !important;
+  flex-grow: 0 !important;
+  margin-top: 11px !important; /* Match task node margin-top */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 12px !important;
 }
 
 /* Back box - 12x12px, transparent by default, visible when has children */
@@ -381,11 +370,10 @@
   min-width: 12px !important;
 }
 
-/* Collapse triangle styling - relative positioned with transform for dynamic placement */
 .ns-collapse-triangle {
   width: 9px;
   height: 9px;
-  margin-top: 11px;
+  margin-top: 11.2px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -396,14 +384,12 @@
   z-index: 10;
 }
 
-/* Spacer maintains the same flex space as triangle would have taken */
 .ns-collapse-spacer {
   width: 9px;
   height: 9px;
-  margin-top: 11px;
+  margin-top: 11.2px;
   flex-shrink: 0;
   position: relative;
-  /* Ensure spacer takes up the same space as absolutely positioned triangle */
 }
 
 .ns-collapse-triangle::before {
@@ -725,4 +711,191 @@
     font-size: 14px;
     padding: 8px 12px;
   }
+}
+
+/* Dark mode styles */
+.ns-dark-mode {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-editor-container {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-editor-status {
+  color: #aaa;
+}
+
+.ns-dark-mode .ns-nodes-container {
+  background: #2a2a2a; /* Distinct container background */
+  border: 1px solid #444; /* Subtle border to define the area */
+}
+
+/* Node text areas */
+.ns-dark-mode .ns-node-textarea {
+  background: #2a2a2a; /* Same as container background */
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+.ns-dark-mode .ns-node-textarea:focus {
+  background: #2a2a2a; /* Keep same background, just change border */
+  border-color: #666;
+  outline-color: #888;
+}
+
+.ns-dark-mode .ns-node-textarea::placeholder {
+  color: #888;
+}
+
+/* Node indicators */
+.ns-dark-mode .ns-node-indicator {
+  --ns-circle-color: #e0e0e0;
+  --ns-parent-border-color: #888;
+  --ns-background-color: #2a2a2a;
+}
+
+/* Hierarchical lines */
+.ns-dark-mode .ns-node-wrapper[data-has-children="true"][data-collapsed="false"]::before {
+  background-color: #555;
+}
+
+.ns-dark-mode .ns-node-wrapper[data-has-children="true"]::after {
+  background-color: #555;
+}
+
+/* Collapse triangles */
+.ns-dark-mode .ns-collapse-triangle {
+  color: #aaa;
+  border-color: transparent transparent transparent #aaa;
+}
+
+.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"] {
+  border-color: #aaa transparent transparent transparent;
+}
+
+.ns-dark-mode .ns-collapse-triangle:hover {
+  color: #e0e0e0;
+  border-color: transparent transparent transparent #e0e0e0;
+}
+
+.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"]:hover {
+  border-color: #e0e0e0 transparent transparent transparent;
+}
+
+/* Task nodes */
+.ns-dark-mode .ns-task-editor-container {
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-task-checkbox {
+  --ns-circle-color: #e0e0e0;
+  --ns-parent-border-color: #888;
+}
+
+/* AI Chat nodes */
+.ns-dark-mode .ns-ai-chat-input {
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+.ns-dark-mode .ns-ai-chat-input:focus {
+  background: #333;
+  border-color: #666;
+}
+
+.ns-dark-mode .ns-ai-chat-response {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-ai-chat-response-content {
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-ai-chat-button {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-ai-chat-button:hover {
+  background: #444;
+}
+
+.ns-dark-mode .ns-ai-chat-button.primary {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.ns-dark-mode .ns-ai-chat-button.primary:hover {
+  background: #004494;
+}
+
+.ns-dark-mode .ns-ai-chat-retry {
+  background: #dc2626;
+  color: white;
+}
+
+.ns-dark-mode .ns-ai-chat-retry:hover {
+  background: #b91c1c;
+}
+
+/* Slash command modal */
+.ns-dark-mode .ns-slash-modal {
+  background: #2a2a2a;
+  border-color: #444;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.ns-dark-mode .ns-slash-option {
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+.ns-dark-mode .ns-slash-option:hover,
+.ns-dark-mode .ns-slash-option.selected {
+  background: #333;
+  color: #fff;
+}
+
+.ns-dark-mode .ns-slash-option-label {
+  color: #e0e0e0;
+}
+
+.ns-dark-mode .ns-slash-option-description {
+  color: #aaa;
+}
+
+/* Persistence loading components */
+.ns-dark-mode .ns-loading-skeleton {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.ns-dark-mode .ns-loading-text {
+  color: #aaa;
+}
+
+.ns-dark-mode .ns-error-banner {
+  background: #3a2a1a;
+  border-color: #8a6a2a;
+}
+
+.ns-dark-mode .ns-error-title,
+.ns-dark-mode .ns-error-message {
+  color: #fbbf24;
+}
+
+.ns-dark-mode .ns-retry-button {
+  background: #0056b3;
+  color: white;
+}
+
+.ns-dark-mode .ns-retry-button:hover {
+  background: #004494;
 }
