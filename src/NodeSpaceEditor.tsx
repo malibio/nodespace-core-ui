@@ -48,7 +48,7 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
   onBlur,
   onRemoveNode,
   className = '',
-  collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity'])
+  collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity', 'image'])
 }) => {
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   const totalNodeCount = countAllNodes(nodes);

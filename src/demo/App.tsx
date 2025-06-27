@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TextNode, BaseNode, TaskNode, AIChatNode } from '../nodes';
+import { TextNode, BaseNode, TaskNode, AIChatNode, ImageNode } from '../nodes';
 import NodeSpaceEditor from '../NodeSpaceEditor';
 import { NodeSpaceCallbacks } from '../hierarchy';
 import { countAllNodes } from '../utils';
@@ -127,7 +127,18 @@ function DemoApp() {
     // AI Chat Node 2: Technical Questions
     const techQuestions = new AIChatNode('How should we implement the authentication system?');
     
-    return [projectNode, docsNode, sprintTasks, aiAssistant, techQuestions];
+    // Image Node: Demo placeholder (no actual image data)
+    const imageDemo = ImageNode.createPlaceholder('UI Mockup - Login Screen');
+    imageDemo.setMetadata({
+      filename: 'login-mockup.png',
+      width: 800,
+      height: 600,
+      fileSize: 125000,
+      mimeType: 'image/png',
+      description: 'User interface mockup for the login screen showing the new design direction'
+    });
+    
+    return [projectNode, docsNode, sprintTasks, aiAssistant, techQuestions, imageDemo];
   });
   
   // Set up initial collapsed state - Project Planning should be collapsed initially
