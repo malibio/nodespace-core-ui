@@ -1,4 +1,4 @@
-import { BaseNode, TextNode, TaskNode, AIChatNode } from '../nodes';
+import { BaseNode, TextNode, TaskNode, AIChatNode, ImageNode } from '../nodes';
 
 /**
  * Utility functions for working with node hierarchies
@@ -194,6 +194,9 @@ export class NodeFactory {
       case 'ai-chat':
         return new AIChatNode(content);
       
+      case 'image':
+        return ImageNode.createPlaceholder(content);
+      
       // Future node types will be added here as they're implemented
       case 'date':
       case 'node-link':
@@ -220,6 +223,9 @@ export class NodeFactory {
       
       case 'ai-chat':
         return new AIChatNode(content);
+      
+      case 'image':
+        return ImageNode.createPlaceholder(content);
       
       // Future node types will be added here as they're implemented
       case 'date':

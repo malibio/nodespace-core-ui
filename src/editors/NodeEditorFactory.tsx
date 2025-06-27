@@ -2,6 +2,7 @@ import React from 'react';
 import { TextNodeEditor, NodeEditorProps } from './TextNodeEditor';
 import { TaskNodeEditor } from './TaskNodeEditor';
 import { AIChatNodeEditor } from './AIChatNodeEditor';
+import { ImageNodeEditor } from './ImageNodeEditor';
 
 /**
  * Factory component that renders the appropriate editor based on node type
@@ -19,6 +20,9 @@ export function NodeEditorFactory(props: NodeEditorProps) {
     
     case 'ai-chat':
       return <AIChatNodeEditor {...props} />;
+    
+    case 'image':
+      return <ImageNodeEditor {...props} />;
     
     case 'date':
       // Will return <DateNodeEditor {...props} /> when implemented
@@ -52,6 +56,9 @@ export function getEditorComponentForNodeType(nodeType: string): React.Component
     
     case 'ai-chat':
       return AIChatNodeEditor;
+    
+    case 'image':
+      return ImageNodeEditor;
     
     default:
       return TextNodeEditor;

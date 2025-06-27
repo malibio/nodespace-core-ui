@@ -697,6 +697,228 @@
   text-align: center;
 }
 
+/* Image Node Styles */
+.ns-image-node-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.ns-image-section {
+  border: 1px solid var(--ns-border, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.ns-image-preview {
+  position: relative;
+  cursor: pointer;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  transition: background-color 0.2s ease;
+}
+
+.ns-image-preview:hover {
+  background: #f1f5f9;
+}
+
+.ns-image-thumbnail {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ns-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: #94a3b8;
+}
+
+.ns-image-placeholder-text {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.ns-image-info {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ns-image-dimensions {
+  font-family: monospace;
+}
+
+.ns-image-metadata {
+  padding: 12px;
+  border-top: 1px solid var(--ns-border, #e2e8f0);
+  background: #f8fafc;
+}
+
+.ns-metadata-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  font-size: 13px;
+}
+
+.ns-metadata-label {
+  color: #64748b;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.ns-metadata-value {
+  color: #374151;
+  text-align: right;
+  word-break: break-word;
+}
+
+.ns-image-description {
+  display: flex;
+  flex-direction: column;
+}
+
+.ns-image-textarea {
+  border: 1px solid var(--ns-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--ns-canvas-bg, #ffffff);
+  color: var(--ns-app-text, #1f2937);
+  resize: vertical;
+  min-height: 38px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ns-image-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.ns-image-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Image Modal for Large Preview */
+.ns-image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.ns-image-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.ns-image-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.ns-image-modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.ns-image-full {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.ns-image-modal-description {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+/* Image Node Indicator */
+.ns-image-indicator {
+  color: #8b5cf6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .ns-image-modal-content {
+    margin: 10px;
+    padding: 16px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+  }
+  
+  .ns-image-full {
+    max-height: 60vh;
+  }
+  
+  .ns-image-thumbnail {
+    max-height: 150px;
+  }
+  
+  .ns-metadata-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  
+  .ns-metadata-value {
+    text-align: left;
+  }
+}
+
 .ns-ai-chat-help {
   font-size: 12px;
   color: #9ca3af;
