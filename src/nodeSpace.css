@@ -113,7 +113,7 @@
   /* Normal content rendering even with error state */
 }
 
-.ns-editor-container { padding: 20px; }
+.ns-editor-container { padding: 20px; background: transparent; }
 .ns-editor-header { margin-bottom: 20px; }
 .ns-editor-status { font-size: 14px; color: #666; }
 
@@ -121,10 +121,10 @@
   display: flex;
   flex-direction: column;
   gap: 0; /* Remove spacing between nodes */
-  background: var(--ns-canvas-bg, #fafafa); /* Themeable canvas background */
+  background: transparent; /* Transparent for unified canvas */
   padding: 12px; /* Add padding around the entire node area */
-  border-radius: 8px; /* Rounded corners for the container */
-  border: 1px solid #e0e0e0; /* Subtle border */
+  border-radius: 0; /* No rounded corners */
+  border: none; /* No border for unified canvas */
 }
 
 /* Hierarchical structure */
@@ -132,6 +132,8 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .ns-node-wrapper {
@@ -139,6 +141,8 @@
   gap: 4px;
   align-items: flex-start;
   margin-left: calc(var(--depth, 0) * 18px);
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Add extra spacing between triangle and indicator for root nodes only */
@@ -229,12 +233,12 @@
   flex: 1;
   font-size: 16px;
   resize: none;
-  border: none;
+  border: none !important;
   padding: 6px 8px;
   border-radius: 0;
   background: transparent;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  transition: border-color 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
   margin-left: -2px;
   overflow: hidden;
@@ -254,9 +258,22 @@
 .ns-node-remove:hover { background-color: #f5f5f5; }
 .ns-node-remove:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* State management via data attributes - no focus borders */
+/* State management via data attributes - accessible focus styling */
 .ns-node-wrapper[data-focused="true"] .ns-node-textarea {
   outline: none;
+}
+
+/* Enhanced focus styles for accessibility */
+.ns-node-textarea:focus {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Hover state for better UX */
+.ns-node-container:hover .ns-node-textarea:not(:focus) {
+  background: transparent;
 }
 
 /* Node type indicators */
@@ -1174,7 +1191,7 @@
   --ns-dark-text-muted: #aaa;
   --ns-dark-surface-hover: #333;
   
-  background: var(--ns-dark-bg);
+  background: transparent;
   color: var(--ns-dark-text);
 }
 
@@ -1184,21 +1201,27 @@
 
 /* Canvas container dark mode */
 .ns-editor-container.ns-dark-mode .ns-nodes-container {
-  background: var(--ns-canvas-bg, var(--ns-dark-surface)); /* Themeable dark canvas background */
-  border: 1px solid var(--ns-dark-border); /* Subtle border to define the area */
+  background: transparent; /* Transparent for unified canvas */
+  border: none; /* No border for unified canvas */
 }
 
 /* Node text areas */
 .ns-editor-container.ns-dark-mode .ns-node-textarea {
   background: transparent; /* Keep transparent for unified canvas */
   color: var(--ns-dark-text);
-  border-color: var(--ns-dark-border);
+  border: none !important; /* Ensure no borders in dark mode */
 }
 
 .ns-editor-container.ns-dark-mode .ns-node-textarea:focus {
-  background: transparent; /* Keep transparent for unified canvas */
-  border-color: var(--ns-dark-border-hover);
-  outline-color: #888;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Dark mode hover state */
+.ns-editor-container.ns-dark-mode .ns-node-container:hover .ns-node-textarea:not(:focus) {
+  background: transparent;
 }
 
 .ns-editor-container.ns-dark-mode .ns-node-textarea::placeholder {

@@ -2,6 +2,8 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  background: #ffffff; /* Light mode background for transparent NodeSpace editor */
+  min-height: 100vh;
 }
 
 .demo-header {
@@ -73,7 +75,7 @@
 }
 
 .ns-dark-mode .demo-container {
-  background: #1a1a1a;
+  background: #1a1a1a; /* Dark mode background for transparent NodeSpace editor */
   color: #e0e0e0;
 }
 
