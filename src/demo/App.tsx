@@ -142,7 +142,7 @@ function DemoApp() {
   });
   
   // Set up initial collapsed state - Project Planning should be collapsed initially
-  const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(() => {
+  const [collapsedNodes] = useState<Set<string>>(() => {
     if (nodes.length > 0) {
       return new Set([nodes[0].getNodeId()]); // Collapse first node (Project Planning)
     }
@@ -255,6 +255,7 @@ function DemoApp() {
         focusedNodeId={focusedNodeId}
         callbacks={callbacks}
         initialCollapsedNodes={collapsedNodes}
+        className={isDarkMode ? 'ns-dark-mode' : ''}
         persistenceConfig={{
           enabled: false, // Disable persistence for demo, but enable the hook
           debounceMs: 500,

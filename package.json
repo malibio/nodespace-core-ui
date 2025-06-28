@@ -26,7 +26,7 @@
     "react-dom": "^19.1.0"
   },
   "scripts": {
-    "demo": "react-scripts start",
+    "demo": "PORT=3001 react-scripts start",
     "build": "tsc && cp src/nodeSpace.css dist/",
     "test": "react-scripts test",
     "lint": "eslint src --ext .ts,.tsx",
