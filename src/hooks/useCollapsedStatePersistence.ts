@@ -198,13 +198,12 @@ export function useCollapsedStatePersistence(
 
   // Toggle individual node collapse
   const toggleNodeCollapse = useCallback((nodeId: string): void => {
-    let wasCollapsed: boolean;
-    let isNowCollapsed: boolean;
+    // Calculate new state synchronously
+    const wasCollapsed = collapsedNodes.has(nodeId);
+    const isNowCollapsed = !wasCollapsed;
     
     setCollapsedNodesState(prev => {
       const newSet = new Set(prev);
-      wasCollapsed = newSet.has(nodeId);
-      isNowCollapsed = !wasCollapsed;
 
       if (isNowCollapsed) {
         newSet.add(nodeId);
@@ -215,14 +214,14 @@ export function useCollapsedStatePersistence(
       return newSet;
     });
 
-    // Immediate callback for UI responsiveness (moved outside setState)
+    // Immediate callback for UI responsiveness 
     if (callbacks?.onCollapseStateChange) {
-      callbacks.onCollapseStateChange(nodeId, isNowCollapsed!);
+      callbacks.onCollapseStateChange(nodeId, isNowCollapsed);
     }
 
     // Batch persistence if enabled
     if (config.enabled && config.autoSave && batchManagerRef.current) {
-      batchManagerRef.current.addOperation(nodeId, isNowCollapsed!);
+      batchManagerRef.current.addOperation(nodeId, isNowCollapsed);
     } else if (config.enabled && config.autoSave) {
       // Fallback to direct save - get the updated state
       setCollapsedNodesState(currentState => {
@@ -232,7 +231,7 @@ export function useCollapsedStatePersistence(
         return currentState; // No state change, just access current state
       });
     }
-  }, [callbacks, config.enabled, config.autoSave, saveCollapsedState]);
+  }, [collapsedNodes, callbacks, config.enabled, config.autoSave, saveCollapsedState]);
 
   // Cleanup on unmount
   useEffect(() => {
