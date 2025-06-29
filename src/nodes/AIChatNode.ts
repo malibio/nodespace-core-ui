@@ -64,7 +64,7 @@ export class AIChatNode extends BaseNode {
     indicator.className = 'ns-node-indicator ns-ai-chat-indicator';
     indicator.setAttribute('data-node-type', 'ai-chat');
     
-    // Create SVG element for sparkles icon
+    // Create SVG element for robot icon
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '12');
     svg.setAttribute('height', '12');
@@ -73,8 +73,8 @@ export class AIChatNode extends BaseNode {
     svg.style.display = 'block';
     
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Fixed: Use correct sparkles icon instead of 'A' letter
-    path.setAttribute('d', 'M444-200 298-346l-58 58 204 204 440-440-58-58-382 382ZM80-680v-120q0-33 23.5-56.5T160-880h120v80H160v120H80Zm0 600v-120h80v120h120v80H160q-33 0-56.5-23.5T80-160ZM680-80v-80h120v-120h80v120q0 33-23.5 56.5T800-80H680Zm120-600v-120H680v-80h120q33 0 56.5 23.5T880-800v120h-80Z');
+    // AI icon - "AI" text with underline, same as used in slash command modal
+    path.setAttribute('d', 'M80-120v-80h800v80H80Zm680-160v-560h60v560h-60Zm-600 0 210-560h100l210 560h-96l-50-144H308l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z');
     
     svg.appendChild(path);
     indicator.appendChild(svg);
