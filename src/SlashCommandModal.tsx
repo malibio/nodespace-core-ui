@@ -128,7 +128,7 @@ export const DEFAULT_SLASH_OPTIONS: SlashCommandOption[] = [
   {
     id: 'ai',
     label: 'NodeSpace AI',
-    icon: 'sparkles',
+    icon: 'ai',
     nodeType: 'ai-chat'
   },
   {
