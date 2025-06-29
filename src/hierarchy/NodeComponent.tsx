@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BaseNode } from '../nodes';
-import { NodeEditor, NodeSpaceCallbacks } from './NodeEditor';
+import { NodeEditor } from './NodeEditor';
+import type { NodeSpaceCallbacks } from '../types';
 
 interface NodeComponentProps {
   node: BaseNode;

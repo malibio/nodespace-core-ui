@@ -6,25 +6,7 @@ import { SlashCommandModal, DEFAULT_SLASH_OPTIONS } from '../SlashCommandModal';
 import type { SlashCommandOption } from '../SlashCommandModal';
 import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory, updateNodeId } from '../utils';
 import type { KeyboardResult } from '../utils';
-
-export interface NodeSpaceCallbacks {
-  // Current semantic callbacks
-  onNodesChange?: (nodes: BaseNode[]) => void;
-  onNodeChange?: (nodeId: string, content: string) => void;
-  onNodeCreate?: (content: string, parentId?: string, nodeType?: string) => Promise<string> | string;
-  onNodeDelete?: (nodeId: string) => void;
-  onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
-
-  // Collapsed state management
-  onCollapseStateChange?: (nodeId: string, collapsed: boolean) => void;
-
-  // NEW: Async persistence callbacks
-  onLoadCollapsedState?: () => Promise<Set<string>>;
-  onSaveCollapsedState?: (collapsedNodes: Set<string>) => Promise<void>;
-
-  // NEW: Batch operations for performance
-  onBatchCollapseChange?: (changes: Array<{nodeId: string, collapsed: boolean}>) => Promise<void>;
-}
+import type { HierarchyContext, ImageUploadResult, NodeSpaceCallbacks } from '../types';
 
 interface NodeEditorProps {
   node: BaseNode;
@@ -166,7 +148,7 @@ export function NodeEditor({
     }
   };
 
-  const handleSlashOptionSelect = (option: SlashCommandOption) => {
+  const handleSlashOptionSelect = async (option: SlashCommandOption) => {
     const textarea = textareaRefs.current[nodeId];
     if (!textarea) return;
 
@@ -180,8 +162,102 @@ export function NodeEditor({
     // Remove from slash position to current cursor position
     const newContent = content.substring(0, lastSlashIndex) + content.substring(currentCursorPosition);
     
-    // If converting to a different node type, create a new node
-    if (option.nodeType !== node.getNodeType()) {
+    // Special handling for image node type
+    if (option.nodeType === 'image') {
+      try {
+        // Capture hierarchy context for future integration with backend services
+        const hierarchyContext: HierarchyContext = {
+          parentId: node.parent?.getNodeId(),
+          indentLevel: getNodeDepth(node),
+          position: node.parent ? node.parent.children.indexOf(node) : nodes.indexOf(node),
+          insertionPoint: 'after'
+        };
+        
+        // TODO: Pass hierarchyContext to Tauri command for proper node positioning
+        console.log('Hierarchy context captured:', hierarchyContext);
+
+        // Show loading state by updating node content
+        node.setContent('📸 Loading image...');
+        callbacks.onNodesChange?.([...nodes]);
+
+        let imageData: ImageUploadResult | undefined;
+
+        // Try Tauri invoke first (for desktop app environment)
+        if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+          const { invoke } = (window as any).__TAURI__.tauri;
+          imageData = await invoke('create_image_node');
+        }
+        // Fallback to callback pattern (for standalone/demo environment) 
+        else if (callbacks.onImageNodeCreate) {
+          // For callback pattern, we need to trigger file selection differently
+          // This would need to be implemented by the parent application
+          throw new Error('Image upload via callback not yet implemented. Please use desktop app.');
+        } else {
+          throw new Error('Image upload not available. Please ensure you are running in the desktop app environment.');
+        }
+
+        if (imageData) {
+          // Create new ImageNode with the returned data
+          const { ImageNode } = await import('../nodes/ImageNode');
+          const imageNode = new ImageNode(
+            imageData.imageData,
+            imageData.metadata,
+            newContent || imageData.metadata.description || 'Untitled Image'
+          );
+          
+          // Copy tree structure relationships
+          imageNode.parent = node.parent;
+          imageNode.children = [...node.children];
+          
+          // Update children's parent reference
+          imageNode.children.forEach(child => {
+            child.parent = imageNode;
+          });
+          
+          // Update the nodes array
+          const updatedNodes = nodes.map(n => {
+            if (n.getNodeId() === nodeId) {
+              return imageNode;
+            }
+            return n;
+          });
+          
+          // Replace in parent's children if this node has a parent
+          if (node.parent) {
+            const parentIndex = node.parent.children.indexOf(node);
+            if (parentIndex >= 0) {
+              node.parent.children[parentIndex] = imageNode;
+            }
+          }
+          
+          callbacks.onNodesChange?.(updatedNodes);
+          
+          // Focus the new node after creation
+          setTimeout(() => {
+            const newTextarea = textareaRefs.current[imageNode.getNodeId()];
+            if (newTextarea) {
+              newTextarea.focus();
+              newTextarea.setSelectionRange(newContent.length, newContent.length);
+            }
+          }, 0);
+        }
+      } catch (error) {
+        // Handle error gracefully
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        node.setContent(`❌ Image upload failed: ${errorMessage}`);
+        callbacks.onNodesChange?.([...nodes]);
+        
+        // Show error for a few seconds, then restore original content
+        setTimeout(() => {
+          node.setContent(newContent);
+          callbacks.onNodesChange?.([...nodes]);
+        }, 3000);
+        
+        console.error('Image upload failed:', error);
+      }
+    }
+    // Handle other node types with existing logic
+    else if (option.nodeType !== node.getNodeType()) {
       const newNode = NodeFactory.createNodeByType(option.nodeType, newContent);
       
       // Copy tree structure relationships
