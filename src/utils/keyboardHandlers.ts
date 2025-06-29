@@ -1,5 +1,5 @@
 import { BaseNode } from '../nodes';
-import { NodeSpaceCallbacks } from '../hierarchy/NodeEditor';
+import { NodeSpaceCallbacks } from '../types';
 
 /**
  * Context information available to keyboard handlers

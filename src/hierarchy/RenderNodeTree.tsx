@@ -1,7 +1,7 @@
 import React from 'react';
 import { BaseNode } from '../nodes';
 import { NodeComponent } from './NodeComponent';
-import { NodeSpaceCallbacks } from './NodeEditor';
+import { NodeSpaceCallbacks } from '../types';
 
 interface RenderNodeTreeProps {
   nodes: BaseNode[];

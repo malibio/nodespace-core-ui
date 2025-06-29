@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { NodeSpaceCallbacks } from '../hierarchy/NodeEditor';
+import type { NodeSpaceCallbacks } from '../types';
 import type { CollapsePersistenceConfig } from '../types/persistence';
 import { CollapseBatchManager } from '../utils/collapseBatchOperations';
 
