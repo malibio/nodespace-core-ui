@@ -18,10 +18,10 @@ test('renders complex node hierarchy with proper structure', () => {
   // Should show keyboard shortcuts help
   expect(screen.getByText(/Keyboard Shortcuts:/i)).toBeInTheDocument();
   
-  // Should show test scenario content
-  expect(screen.getByDisplayValue(/Root A \(collapsed\)/i)).toBeInTheDocument();
-  expect(screen.getByDisplayValue(/Root B - DELETE ME/i)).toBeInTheDocument();
-  expect(screen.getByDisplayValue(/Task Root/i)).toBeInTheDocument();
+  // Should show current demo scenario content
+  expect(screen.getByDisplayValue(/Project Planning/i)).toBeInTheDocument();
+  expect(screen.getAllByDisplayValue(/Documentation/i)[0]).toBeInTheDocument();
+  expect(screen.getByDisplayValue(/Sprint 1 Tasks/i)).toBeInTheDocument();
   
   // Should have proper CSS classes and data attributes
   const nodeWrappers = container.querySelectorAll('.ns-node-wrapper');
