@@ -7,6 +7,7 @@ import type { SlashCommandOption } from '../SlashCommandModal';
 import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory } from '../utils';
 import type { KeyboardResult } from '../utils';
 import type { ImageUploadResult, NodeSpaceCallbacks } from '../types';
+import { VirtualNodeManager } from '../utils/virtualNodeManager';
 
 interface NodeEditorProps {
   node: BaseNode;
@@ -24,6 +25,7 @@ interface NodeEditorProps {
   // Additional props for ID synchronization
   focusedNodeId: string | null;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
+  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
 }
 
 // Helper function to calculate node depth in hierarchy
@@ -50,7 +52,8 @@ export function NodeEditor({
   navigationStateRef,
   collapsedNodes,
   focusedNodeId,
-  onFocusedNodeIdChange
+  onFocusedNodeIdChange,
+  virtualNodeManager
 }: NodeEditorProps) {
   const nodeId = node.getNodeId();
   
@@ -331,7 +334,8 @@ export function NodeEditor({
       allNodes: nodes,
       textareaRefs,
       callbacks,
-      collapsedNodes
+      collapsedNodes,
+      virtualNodeManager // NEW: For NS-117
     };
     
     let result: KeyboardResult = { handled: false };

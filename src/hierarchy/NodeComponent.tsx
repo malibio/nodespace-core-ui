@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BaseNode } from '../nodes';
 import { NodeEditor } from './NodeEditor';
 import type { NodeSpaceCallbacks } from '../types';
+import { VirtualNodeManager } from '../utils/virtualNodeManager';
 
 interface NodeComponentProps {
   node: BaseNode;
@@ -19,6 +20,7 @@ interface NodeComponentProps {
   collapsibleNodeTypes: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
+  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
 }
 
 export function NodeComponent({
@@ -36,7 +38,8 @@ export function NodeComponent({
   collapsedNodes,
   collapsibleNodeTypes,
   onCollapseChange,
-  onFocusedNodeIdChange
+  onFocusedNodeIdChange,
+  virtualNodeManager
 }: NodeComponentProps) {
   const nodeId = node.getNodeId();
   const isFocused = focusedNodeId === nodeId;
@@ -380,6 +383,7 @@ export function NodeComponent({
           collapsedNodes={collapsedNodes}
           focusedNodeId={focusedNodeId}
           onFocusedNodeIdChange={onFocusedNodeIdChange}
+          virtualNodeManager={virtualNodeManager}
         />
       </div>
 
@@ -404,6 +408,7 @@ export function NodeComponent({
               collapsibleNodeTypes={collapsibleNodeTypes}
               onCollapseChange={onCollapseChange}
               onFocusedNodeIdChange={onFocusedNodeIdChange}
+              virtualNodeManager={virtualNodeManager}
             />
           ))}
         </div>

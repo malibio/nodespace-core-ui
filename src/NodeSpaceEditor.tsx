@@ -5,6 +5,7 @@ import { countAllNodes } from './utils';
 import { useCollapsedStatePersistence } from './hooks/useCollapsedStatePersistence';
 import { CollapsedStateLoader } from './components/CollapsedStateLoader';
 import { NodeCRUDManager, NodeFactory } from './utils/crudOperations';
+import { VirtualNodeManager } from './utils/virtualNodeManager';
 import type { CollapsePersistenceConfig } from './types/persistence';
 
 export interface NodeSpaceEditorProps {
@@ -24,6 +25,9 @@ export interface NodeSpaceEditorProps {
 
   // NEW: Unified CRUD Operations (NS-121)
   enableUnifiedCRUD?: boolean;
+
+  // NEW: Virtual Node Management (NS-117)
+  enableVirtualNodes?: boolean;
 
   // Keep other existing props...
   onFocus?: (nodeId: string) => void;
@@ -79,6 +83,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
   isLoadingCollapsedState = false,
   onCollapsedStateLoaded,
   enableUnifiedCRUD = true,
+  enableVirtualNodes = false,
   onFocus,
   onBlur,
   onRemoveNode,
@@ -119,12 +124,34 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
     return null;
   }, [nodes, callbacks, enableUnifiedCRUD]);
 
+  // NEW: Virtual Node Manager (NS-117)
+  const virtualNodeManager = useMemo(() => {
+    if (enableVirtualNodes) {
+      const handleTreeUpdate = (updatedNodes: BaseNode[]) => {
+        if (callbacks.onNodesChange) {
+          callbacks.onNodesChange(updatedNodes.length > 0 ? updatedNodes : nodes);
+        }
+      };
+      return new VirtualNodeManager(callbacks, handleTreeUpdate);
+    }
+    return null;
+  }, [enableVirtualNodes, callbacks, nodes]);
+
   // Update CRUD manager when nodes or callbacks change
   useEffect(() => {
     if (crudManager) {
       crudManager.setNodes(nodes);
     }
   }, [nodes, crudManager]);
+
+  // Cleanup virtual node manager on unmount
+  useEffect(() => {
+    return () => {
+      if (virtualNodeManager) {
+        virtualNodeManager.destroy();
+      }
+    };
+  }, [virtualNodeManager]);
 
   // Expose unified CRUD operations through ref (NS-121)
   React.useImperativeHandle(ref, () => ({
@@ -250,6 +277,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
           collapsibleNodeTypes={collapsibleNodeTypes}
           onCollapseChange={handleNodeCollapseToggle}
           onFocusedNodeIdChange={handleFocusedNodeIdChange}
+          virtualNodeManager={virtualNodeManager || undefined}
         />
       </div>
     </CollapsedStateLoader>

@@ -2,6 +2,7 @@ import React from 'react';
 import { BaseNode } from '../nodes';
 import { NodeComponent } from './NodeComponent';
 import { NodeSpaceCallbacks } from '../types';
+import { VirtualNodeManager } from '../utils/virtualNodeManager';
 
 interface RenderNodeTreeProps {
   nodes: BaseNode[];
@@ -16,10 +17,11 @@ interface RenderNodeTreeProps {
   collapsibleNodeTypes: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
+  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
 }
 
 export function RenderNodeTree(props: RenderNodeTreeProps) {
-  const { nodes, totalNodeCount, focusedNodeId, textareaRefs, onRemoveNode, callbacks, onFocus, onBlur, collapsedNodes, collapsibleNodeTypes, onCollapseChange, onFocusedNodeIdChange } = props;
+  const { nodes, totalNodeCount, focusedNodeId, textareaRefs, onRemoveNode, callbacks, onFocus, onBlur, collapsedNodes, collapsibleNodeTypes, onCollapseChange, onFocusedNodeIdChange, virtualNodeManager } = props;
   const isRemoveDisabled = totalNodeCount <= 1;
   
   // Shared navigation state using React Context or a simple ref
@@ -51,6 +53,7 @@ export function RenderNodeTree(props: RenderNodeTreeProps) {
           collapsibleNodeTypes={collapsibleNodeTypes}
           onCollapseChange={onCollapseChange}
           onFocusedNodeIdChange={onFocusedNodeIdChange}
+          virtualNodeManager={virtualNodeManager}
         />
       ))}
     </div>
