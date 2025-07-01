@@ -122,7 +122,7 @@ export class NodeCRUDManager {
         // Handle both sync and async responses
         if (result instanceof Promise) {
           result.catch(error => {
-            console.warn('Node creation callback failed:', error);
+            // Callback failures are handled silently
           });
         }
       }

@@ -6,7 +6,7 @@ import { SlashCommandModal, DEFAULT_SLASH_OPTIONS } from '../SlashCommandModal';
 import type { SlashCommandOption } from '../SlashCommandModal';
 import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory, updateNodeId } from '../utils';
 import type { KeyboardResult } from '../utils';
-import type { HierarchyContext, ImageUploadResult, NodeSpaceCallbacks } from '../types';
+import type { ImageUploadResult, NodeSpaceCallbacks } from '../types';
 
 interface NodeEditorProps {
   node: BaseNode;
@@ -165,16 +165,6 @@ export function NodeEditor({
     // Special handling for image node type
     if (option.nodeType === 'image') {
       try {
-        // Capture hierarchy context for future integration with backend services
-        const hierarchyContext: HierarchyContext = {
-          parentId: node.parent?.getNodeId(),
-          indentLevel: getNodeDepth(node),
-          position: node.parent ? node.parent.children.indexOf(node) : nodes.indexOf(node),
-          insertionPoint: 'after'
-        };
-        
-        // TODO: Pass hierarchyContext to Tauri command for proper node positioning
-        console.log('Hierarchy context captured:', hierarchyContext);
 
         // Show loading state by updating node content
         node.setContent('📸 Loading image...');
@@ -331,7 +321,6 @@ export function NodeEditor({
     const handler = KeyboardHandlerRegistry.getHandlerForNode(node);
     
     if (!handler) {
-      console.warn(`No keyboard handler found for node type: ${node.getNodeType()}`);
       return;
     }
     
@@ -496,10 +485,6 @@ export function NodeEditor({
     resetNavigationState();
   };
 
-  // Note: handleRemove not currently used but kept for potential future use
-  // const handleRemove = () => {
-  //   onRemoveNode(node);
-  // };
 
   return (
     <>
