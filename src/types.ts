@@ -34,4 +34,14 @@ export interface NodeSpaceCallbacks {
   onImageNodeCreate?: (imageData: Uint8Array, metadata: ImageMetadata, parentId?: string) => Promise<string>;
   onImageNodeSelect?: (nodeId: string) => void;
   onImagePreview?: (nodeId: string) => void;
+
+  // NEW: Unified CRUD Operations (NS-121)
+  // Move Pattern - Change parent
+  onNodeMove?: (nodeId: string, newParentId?: string, afterSiblingId?: string) => void;
+  
+  // Reorder Pattern - Change sibling position  
+  onNodeReorder?: (nodeId: string, afterSiblingId?: string) => void;
+
+  // Update Pattern - Enhanced for node objects
+  onNodeUpdate?: (updatedNode: BaseNode) => void;
 }
