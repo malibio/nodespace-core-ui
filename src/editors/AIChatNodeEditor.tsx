@@ -226,8 +226,7 @@ export function AIChatNodeEditor({
                           source={source}
                           relevanceScore={currentAssistantMessage?.rag_context?.retrieval_score}
                           onSourceClick={(nodeId) => {
-                            // TODO: Implement navigation to source node
-                            console.log('Navigate to source:', nodeId);
+                            // Source navigation to be implemented
                           }}
                         />
                       ))}
