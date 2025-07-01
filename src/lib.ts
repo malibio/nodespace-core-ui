@@ -21,4 +21,8 @@ export * from './components/CollapsedStateLoader';
 export * from './types/chat';
 
 // Export the main component interface
-export type { NodeSpaceEditorProps } from './NodeSpaceEditor';
+export type { NodeSpaceEditorProps, NodeSpaceEditorRef } from './NodeSpaceEditor';
+
+// Export unified CRUD operations (NS-121)
+export { NodeCRUDManager, NodeFactory } from './utils/crudOperations';
+export type { CrudOperationResult, MoveOperationResult } from './utils/crudOperations';
