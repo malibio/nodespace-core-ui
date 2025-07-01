@@ -15,9 +15,16 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
     const { cursorPosition, content, callbacks } = context;
     
-    // Special case: cursor at beginning - create empty node above
+    // Special case: cursor at beginning - create virtual node above
     if (cursorPosition === 0) {
-      const newNode = NodeFactory.createSimilarNode(node, '');
+      // NEW: Use virtual node manager for NS-117
+      const newNode = context.virtualNodeManager 
+        ? context.virtualNodeManager.createVirtualNode(
+            () => NodeFactory.createSimilarNode(node, ''),
+            node.parent?.getNodeId()
+          )
+        : NodeFactory.createSimilarNode(node, ''); // Fallback to immediate creation
+      
       let updatedNodes: BaseNode[] = [];
       
       if (node.parent) {
@@ -34,22 +41,25 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
         updatedNodes.splice(rootIndex, 0, newNode); // Insert before current node
       }
       
-      // Fire semantic node creation event (fire-and-forget with upfront UUID)
-      if (callbacks.onNodeCreateWithId) {
-        const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), '', node.parent?.getNodeId(), newNode.getNodeType());
-        if (result instanceof Promise) {
-          result.catch(error => {
-            console.warn('Node creation callback failed:', error);
-          });
+      // Legacy callback handling for backward compatibility (only if not using virtual manager)
+      if (!context.virtualNodeManager) {
+        // Fire semantic node creation event (fire-and-forget with upfront UUID)
+        if (callbacks.onNodeCreateWithId) {
+          const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), '', node.parent?.getNodeId(), newNode.getNodeType());
+          if (result instanceof Promise) {
+            result.catch(error => {
+              console.warn('Node creation callback failed:', error);
+            });
+          }
         }
-      }
-      // Fallback to legacy callback for backward compatibility
-      else if (callbacks.onNodeCreate) {
-        const result = callbacks.onNodeCreate('', node.parent?.getNodeId(), newNode.getNodeType());
-        if (result instanceof Promise) {
-          result.catch(error => {
-            console.warn('Legacy node creation callback failed:', error);
-          });
+        // Fallback to legacy callback for backward compatibility
+        else if (callbacks.onNodeCreate) {
+          const result = callbacks.onNodeCreate('', node.parent?.getNodeId(), newNode.getNodeType());
+          if (result instanceof Promise) {
+            result.catch(error => {
+              console.warn('Legacy node creation callback failed:', error);
+            });
+          }
         }
       }
       
@@ -67,7 +77,14 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     const rightContent = content.substring(cursorPosition);
     
     node.setContent(leftContent);
-    const newNode = NodeFactory.createSimilarNode(node, rightContent);
+    
+    // NEW: Use virtual node manager for NS-117
+    const newNode = context.virtualNodeManager 
+      ? context.virtualNodeManager.createVirtualNode(
+          () => NodeFactory.createSimilarNode(node, rightContent),
+          node.parent?.getNodeId()
+        )
+      : NodeFactory.createSimilarNode(node, rightContent); // Fallback to immediate creation
     
     // Handle children transfer based on collapsed state
     if (node.children.length > 0) {
@@ -102,22 +119,25 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       updatedNodes.splice(rootIndex + 1, 0, newNode);
     }
     
-    // Fire semantic node creation event (fire-and-forget with upfront UUID)
-    if (callbacks.onNodeCreateWithId) {
-      const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), rightContent, node.parent?.getNodeId(), newNode.getNodeType());
-      if (result instanceof Promise) {
-        result.catch(error => {
-          console.warn('Node creation callback failed:', error);
-        });
+    // Legacy callback handling for backward compatibility (only if not using virtual manager)
+    if (!context.virtualNodeManager) {
+      // Fire semantic node creation event (fire-and-forget with upfront UUID)
+      if (callbacks.onNodeCreateWithId) {
+        const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), rightContent, node.parent?.getNodeId(), newNode.getNodeType());
+        if (result instanceof Promise) {
+          result.catch(error => {
+            console.warn('Node creation callback failed:', error);
+          });
+        }
       }
-    }
-    // Fallback to legacy callback for backward compatibility
-    else if (callbacks.onNodeCreate) {
-      const result = callbacks.onNodeCreate(rightContent, node.parent?.getNodeId(), newNode.getNodeType());
-      if (result instanceof Promise) {
-        result.catch(error => {
-          console.warn('Legacy node creation callback failed:', error);
-        });
+      // Fallback to legacy callback for backward compatibility
+      else if (callbacks.onNodeCreate) {
+        const result = callbacks.onNodeCreate(rightContent, node.parent?.getNodeId(), newNode.getNodeType());
+        if (result instanceof Promise) {
+          result.catch(error => {
+            console.warn('Legacy node creation callback failed:', error);
+          });
+        }
       }
     }
     

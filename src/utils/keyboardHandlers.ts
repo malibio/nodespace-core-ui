@@ -1,5 +1,6 @@
 import { BaseNode } from '../nodes';
 import { NodeSpaceCallbacks } from '../types';
+import { VirtualNodeManager } from './virtualNodeManager';
 
 /**
  * Context information available to keyboard handlers
@@ -11,6 +12,7 @@ export interface EditContext {
   textareaRefs: React.MutableRefObject<{ [key: string]: HTMLTextAreaElement | null }>;
   callbacks: NodeSpaceCallbacks;
   collapsedNodes?: Set<string>;
+  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117 virtual node conversion
 }
 
 /**

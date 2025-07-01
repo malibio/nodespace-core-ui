@@ -23,6 +23,9 @@ export interface NodeSpaceCallbacks {
   // NEW: Fire-and-forget callback with upfront UUID (NS-124)
   onNodeCreateWithId?: (nodeId: string, content: string, parentId?: string, nodeType?: string) => Promise<void> | void;
   
+  // NEW: Virtual-to-real node conversion callback (NS-117)
+  onNewNodeCreated?: (node: BaseNode, getNewNodeIdLambda: (newNodeId: string) => void) => void;
+  
   onNodeDelete?: (nodeId: string) => void;
   onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 
