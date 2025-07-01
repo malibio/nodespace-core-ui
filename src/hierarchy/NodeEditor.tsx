@@ -4,7 +4,7 @@ import { NodeIndicator } from '../NodeIndicator';
 import { NodeEditorFactory } from '../editors';
 import { SlashCommandModal, DEFAULT_SLASH_OPTIONS } from '../SlashCommandModal';
 import type { SlashCommandOption } from '../SlashCommandModal';
-import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory, updateNodeId } from '../utils';
+import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, NodeFactory } from '../utils';
 import type { KeyboardResult } from '../utils';
 import type { ImageUploadResult, NodeSpaceCallbacks } from '../types';
 
@@ -431,32 +431,7 @@ export function NodeEditor({
         callbacks.onNodesChange?.(result.newNodes);
       }
       
-      // Handle async operations (ID synchronization)
-      if (result.asyncOperation) {
-        const { temporaryNodeId, realNodeIdPromise } = result.asyncOperation;
-        
-        realNodeIdPromise.then((realId) => {
-          // Update the node ID and all references
-          const updatedFocusedNodeId = updateNodeId(
-            result.newNodes || nodes,
-            temporaryNodeId,
-            realId,
-            textareaRefs,
-            focusedNodeId
-          );
-          
-          // Update focused node ID if it changed
-          if (updatedFocusedNodeId !== focusedNodeId) {
-            onFocusedNodeIdChange(updatedFocusedNodeId);
-          }
-          
-          // Trigger re-render to reflect ID changes
-          callbacks.onNodesChange?.(result.newNodes || [...nodes]);
-        }).catch((error) => {
-          console.error('Failed to synchronize node ID:', error);
-          // Handle error gracefully - node will keep temporary ID
-        });
-      }
+      // NOTE: Async ID synchronization removed in NS-124 - UUIDs generated upfront, no swapping needed
 
       if (result.focusNodeId && result.cursorPosition !== undefined) {
         setTimeout(() => {

@@ -103,7 +103,7 @@ export class NodeCRUDManager {
   }
 
   /**
-   * Create Pattern - Fire-and-forget node creation
+   * Create Pattern - Fire-and-forget node creation (NS-124)
    */
   async createNode(
     nodeType: string,
@@ -114,15 +114,29 @@ export class NodeCRUDManager {
     try {
       // Create node with UUID upfront (fire-and-forget pattern)
       const newNode = NodeFactory.createNodeByType(nodeType, content);
+      const nodeId = newNode.getNodeId();
       
-      // Call semantic callback (fire-and-forget)
-      if (this.callbacks.onNodeCreate) {
+      // Use new fire-and-forget callback with upfront UUID
+      if (this.callbacks.onNodeCreateWithId) {
+        const result = this.callbacks.onNodeCreateWithId(nodeId, content, parentId, nodeType);
+        
+        // Handle both sync and async responses (fire-and-forget)
+        if (result instanceof Promise) {
+          result.catch(error => {
+            // Callback failures are handled silently for fire-and-forget pattern
+            console.warn('Node creation callback failed:', error);
+          });
+        }
+      }
+      // Fallback to old callback for backward compatibility
+      else if (this.callbacks.onNodeCreate) {
         const result = this.callbacks.onNodeCreate(content, parentId, nodeType);
         
         // Handle both sync and async responses
         if (result instanceof Promise) {
           result.catch(error => {
             // Callback failures are handled silently
+            console.warn('Legacy node creation callback failed:', error);
           });
         }
       }

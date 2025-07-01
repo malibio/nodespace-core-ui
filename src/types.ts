@@ -16,7 +16,13 @@ export interface NodeSpaceCallbacks {
   // Current semantic callbacks
   onNodesChange?: (nodes: BaseNode[]) => void;
   onNodeChange?: (nodeId: string, content: string) => void;
+  
+  // DEPRECATED: Old callback that returns ID (will be removed)
   onNodeCreate?: (content: string, parentId?: string, nodeType?: string) => Promise<string> | string;
+  
+  // NEW: Fire-and-forget callback with upfront UUID (NS-124)
+  onNodeCreateWithId?: (nodeId: string, content: string, parentId?: string, nodeType?: string) => Promise<void> | void;
+  
   onNodeDelete?: (nodeId: string) => void;
   onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 

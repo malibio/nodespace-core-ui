@@ -22,11 +22,7 @@ export interface KeyboardResult {
   focusNodeId?: string;
   cursorPosition?: number;
   preventDefault?: boolean;
-  // For async operations that need ID synchronization
-  asyncOperation?: {
-    temporaryNodeId: string;
-    realNodeIdPromise: Promise<string>;
-  };
+  // NOTE: asyncOperation removed in NS-124 - UUIDs generated upfront, no ID swapping needed
 }
 
 /**
