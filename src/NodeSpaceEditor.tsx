@@ -1,9 +1,10 @@
-import React, { useRef, useCallback, useEffect } from 'react';
-import { BaseNode } from './nodes';
+import React, { useRef, useCallback, useEffect, useMemo } from 'react';
+import { BaseNode, DateFormat } from './nodes';
 import { RenderNodeTree, NodeSpaceCallbacks } from './hierarchy';
 import { countAllNodes } from './utils';
 import { useCollapsedStatePersistence } from './hooks/useCollapsedStatePersistence';
 import { CollapsedStateLoader } from './components/CollapsedStateLoader';
+import { NodeCRUDManager, NodeFactory } from './utils/crudOperations';
 import type { CollapsePersistenceConfig } from './types/persistence';
 
 export interface NodeSpaceEditorProps {
@@ -21,6 +22,9 @@ export interface NodeSpaceEditorProps {
   isLoadingCollapsedState?: boolean;
   onCollapsedStateLoaded?: () => void;
 
+  // NEW: Unified CRUD Operations (NS-121)
+  enableUnifiedCRUD?: boolean;
+
   // Keep other existing props...
   onFocus?: (nodeId: string) => void;
   onBlur?: () => void;
@@ -30,26 +34,57 @@ export interface NodeSpaceEditorProps {
 }
 
 /**
+ * Unified CRUD Operations Interface (NS-121)
+ * Exposed through ref for programmatic access
+ */
+export interface NodeSpaceEditorRef {
+  // Create Pattern
+  createNode: (nodeType: string, content?: string, parentId?: string, afterSiblingId?: string) => Promise<{ success: boolean; nodeId?: string; error?: string }>;
+  
+  // Update Pattern  
+  updateNode: (updatedNode: BaseNode) => { success: boolean; nodeId?: string; error?: string };
+  
+  // Delete Pattern
+  deleteNode: (nodeId: string, preserveChildren?: boolean) => { success: boolean; nodeId?: string; error?: string };
+  
+  // Move Pattern - Change parent
+  moveNode: (nodeId: string, newParentId?: string, afterSiblingId?: string) => { success: boolean; nodeId?: string; error?: string };
+  
+  // Reorder Pattern - Change sibling position
+  reorderNode: (nodeId: string, afterSiblingId?: string) => { success: boolean; nodeId?: string; error?: string };
+
+  // Type-safe node constructors
+  createTextNode: (content?: string, nodeId?: string) => BaseNode;
+  createTaskNode: (content?: string, nodeId?: string) => BaseNode;
+  createImageNode: (imageData?: Uint8Array, metadata?: any, description?: string, nodeId?: string) => BaseNode;
+  createDateNode: (date: Date, dateFormat?: string, nodeId?: string) => BaseNode;
+  createEntityNode: (entityType: string, content?: string, properties?: Record<string, any>, nodeId?: string) => BaseNode;
+}
+
+/**
  * NodeSpaceEditor - Main component for hierarchical block editing
  * 
  * This is the primary export of the nodespace-core-ui library.
  * It provides a complete hierarchical block editor with keyboard navigation,
  * collapsible nodes, and advanced editing features.
+ * 
+ * NEW: Supports unified CRUD operations (NS-121) through ref interface
  */
-const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
+const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProps>(({
   nodes,
   focusedNodeId = null,
-  callbacks,
+  callbacks = {},
   initialCollapsedNodes,
   persistenceConfig,
   isLoadingCollapsedState = false,
   onCollapsedStateLoaded,
+  enableUnifiedCRUD = true,
   onFocus,
   onBlur,
   onRemoveNode,
   className = '',
   collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity', 'image'])
-}) => {
+}, ref) => {
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   const totalNodeCount = countAllNodes(nodes);
 
@@ -75,6 +110,71 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
       onCollapsedStateLoaded();
     }
   }, [isPersistenceLoading, onCollapsedStateLoaded]);
+
+  // NEW: Unified CRUD Manager (NS-121)
+  const crudManager = useMemo(() => {
+    if (enableUnifiedCRUD) {
+      return new NodeCRUDManager(nodes, callbacks);
+    }
+    return null;
+  }, [nodes, callbacks, enableUnifiedCRUD]);
+
+  // Update CRUD manager when nodes or callbacks change
+  useEffect(() => {
+    if (crudManager) {
+      crudManager.setNodes(nodes);
+    }
+  }, [nodes, crudManager]);
+
+  // Expose unified CRUD operations through ref (NS-121)
+  React.useImperativeHandle(ref, () => ({
+    // Create Pattern
+    createNode: async (nodeType: string, content?: string, parentId?: string, afterSiblingId?: string) => {
+      if (!crudManager) {
+        return { success: false, error: 'CRUD operations not enabled' };
+      }
+      return await crudManager.createNode(nodeType, content || '', parentId, afterSiblingId);
+    },
+
+    // Update Pattern
+    updateNode: (updatedNode: BaseNode) => {
+      if (!crudManager) {
+        return { success: false, error: 'CRUD operations not enabled' };
+      }
+      return crudManager.updateNode(updatedNode);
+    },
+
+    // Delete Pattern
+    deleteNode: (nodeId: string, preserveChildren?: boolean) => {
+      if (!crudManager) {
+        return { success: false, error: 'CRUD operations not enabled' };
+      }
+      return crudManager.deleteNode(nodeId, preserveChildren);
+    },
+
+    // Move Pattern - Change parent
+    moveNode: (nodeId: string, newParentId?: string, afterSiblingId?: string) => {
+      if (!crudManager) {
+        return { success: false, error: 'CRUD operations not enabled' };
+      }
+      return crudManager.moveNode(nodeId, newParentId, afterSiblingId);
+    },
+
+    // Reorder Pattern - Change sibling position
+    reorderNode: (nodeId: string, afterSiblingId?: string) => {
+      if (!crudManager) {
+        return { success: false, error: 'CRUD operations not enabled' };
+      }
+      return crudManager.reorderNode(nodeId, afterSiblingId);
+    },
+
+    // Type-safe node constructors
+    createTextNode: (content?: string, nodeId?: string) => NodeFactory.createTextNode(content, nodeId),
+    createTaskNode: (content?: string, nodeId?: string) => NodeFactory.createTaskNode(content, nodeId),
+    createImageNode: (imageData?: Uint8Array, metadata: any = {}, description?: string, nodeId?: string) => NodeFactory.createImageNode(imageData, metadata, description, nodeId),
+    createDateNode: (date: Date, dateFormat: string = 'full', nodeId?: string) => NodeFactory.createDateNode(date, dateFormat as DateFormat, nodeId),
+    createEntityNode: (entityType: string, content?: string, properties: Record<string, any> = {}, nodeId?: string) => NodeFactory.createEntityNode(entityType, content, properties, nodeId)
+  }), [crudManager]);
 
   // Update collapse handler to use persistence hook
   const handleNodeCollapseToggle = useCallback((nodeId: string, collapsed: boolean) => {
@@ -154,6 +254,9 @@ const NodeSpaceEditor: React.FC<NodeSpaceEditorProps> = ({
       </div>
     </CollapsedStateLoader>
   );
-};
+});
+
+// Set display name for better debugging
+NodeSpaceEditor.displayName = 'NodeSpaceEditor';
 
 export default NodeSpaceEditor;
