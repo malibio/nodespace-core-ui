@@ -14,6 +14,40 @@ describe('BaseNode', () => {
     expect(node1.getNodeId()).not.toBe(node2.getNodeId());
   });
 
+  test('UUID generation upfront (NS-124)', () => {
+    const node = new TextNode('test content');
+    const nodeId = node.getNodeId();
+    
+    // UUID should be generated immediately upon construction
+    expect(nodeId).toBeTruthy();
+    expect(typeof nodeId).toBe('string');
+    expect(nodeId.length).toBeGreaterThan(0);
+    
+    // Should be a valid UUID format (8-4-4-4-12 pattern)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    expect(nodeId).toMatch(uuidRegex);
+  });
+
+  test('custom node ID acceptance', () => {
+    const customId = 'custom-test-id-123';
+    const node = new TextNode('test content', customId);
+    
+    // Should accept and use provided custom ID
+    expect(node.getNodeId()).toBe(customId);
+  });
+
+  test('fire-and-forget pattern - no async ID operations', () => {
+    const node = new TextNode('test content');
+    const initialId = node.getNodeId();
+    
+    // ID should remain stable throughout node lifecycle
+    expect(node.getNodeId()).toBe(initialId);
+    
+    // Modifying content should not change ID
+    node.setContent('updated content');
+    expect(node.getNodeId()).toBe(initialId);
+  });
+
   test('metadata management', () => {
     const node = new TextNode('test');
     

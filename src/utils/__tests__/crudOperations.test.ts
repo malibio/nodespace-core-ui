@@ -208,7 +208,7 @@ describe('NodeCRUDManager', () => {
       // Wait for the promise rejection to be handled
       await new Promise(resolve => setTimeout(resolve, 0));
       
-      expect(consoleSpy).toHaveBeenCalledWith('Node creation callback failed:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('Legacy node creation callback failed:', expect.any(Error));
       consoleSpy.mockRestore();
     });
   });

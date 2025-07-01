@@ -34,18 +34,22 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
         updatedNodes.splice(rootIndex, 0, newNode); // Insert before current node
       }
       
-      // Fire semantic node creation event and handle ID synchronization
-      let asyncOperation;
-      if (callbacks.onNodeCreate) {
+      // Fire semantic node creation event (fire-and-forget with upfront UUID)
+      if (callbacks.onNodeCreateWithId) {
+        const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), '', node.parent?.getNodeId(), newNode.getNodeType());
+        if (result instanceof Promise) {
+          result.catch(error => {
+            console.warn('Node creation callback failed:', error);
+          });
+        }
+      }
+      // Fallback to legacy callback for backward compatibility
+      else if (callbacks.onNodeCreate) {
         const result = callbacks.onNodeCreate('', node.parent?.getNodeId(), newNode.getNodeType());
         if (result instanceof Promise) {
-          asyncOperation = {
-            temporaryNodeId: newNode.getNodeId(),
-            realNodeIdPromise: result
-          };
-        } else if (typeof result === 'string') {
-          // Synchronous case - update ID immediately
-          newNode.setNodeId(result);
+          result.catch(error => {
+            console.warn('Legacy node creation callback failed:', error);
+          });
         }
       }
       
@@ -54,8 +58,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
         newNodes: updatedNodes,
         focusNodeId: node.getNodeId(), // Stay focused on original node
         cursorPosition: 0, // Cursor stays at beginning of original node
-        preventDefault: true,
-        asyncOperation
+        preventDefault: true
       };
     }
     
@@ -99,18 +102,22 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       updatedNodes.splice(rootIndex + 1, 0, newNode);
     }
     
-    // Fire semantic node creation event and handle ID synchronization
-    let asyncOperation;
-    if (callbacks.onNodeCreate) {
+    // Fire semantic node creation event (fire-and-forget with upfront UUID)
+    if (callbacks.onNodeCreateWithId) {
+      const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), rightContent, node.parent?.getNodeId(), newNode.getNodeType());
+      if (result instanceof Promise) {
+        result.catch(error => {
+          console.warn('Node creation callback failed:', error);
+        });
+      }
+    }
+    // Fallback to legacy callback for backward compatibility
+    else if (callbacks.onNodeCreate) {
       const result = callbacks.onNodeCreate(rightContent, node.parent?.getNodeId(), newNode.getNodeType());
       if (result instanceof Promise) {
-        asyncOperation = {
-          temporaryNodeId: newNode.getNodeId(),
-          realNodeIdPromise: result
-        };
-      } else if (typeof result === 'string') {
-        // Synchronous case - update ID immediately
-        newNode.setNodeId(result);
+        result.catch(error => {
+          console.warn('Legacy node creation callback failed:', error);
+        });
       }
     }
     
@@ -119,8 +126,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       newNodes: updatedNodes,
       focusNodeId: newNode.getNodeId(),
       cursorPosition: 0,
-      preventDefault: true,
-      asyncOperation
+      preventDefault: true
     };
   }
   
