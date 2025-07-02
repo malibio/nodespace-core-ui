@@ -562,8 +562,8 @@
   padding: 16px;
   background: #f3f4f6;
   margin: 0;
-  /* Adjust margin to align with text content */
-  margin-left: 6px;
+  /* Adjust margin to align with text content (12px icon + 8px gap = 20px) */
+  margin-left: 20px;
   padding-left: 10px;
 }
 
