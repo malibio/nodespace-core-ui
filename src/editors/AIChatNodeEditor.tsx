@@ -31,7 +31,7 @@ export function AIChatNodeEditor({
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newTitle = e.target.value;
     chatNode.setTitle(newTitle);
-    onContentChange(newTitle);
+    onContentChange(newTitle); // Title changes are the main content
     triggerUpdate();
   };
 
@@ -39,7 +39,7 @@ export function AIChatNodeEditor({
   const handleQuestionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newQuestion = e.target.value;
     chatNode.setQuestion(newQuestion);
-    onContentChange(newQuestion);
+    // Don't call onContentChange for question - it's separate from main content
     triggerUpdate();
   };
 
