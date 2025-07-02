@@ -1332,7 +1332,8 @@
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-editor {
-  background: #333333;
+  background: #333333 !important;
+  border: 1px solid #4a4a4a;
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-title {
@@ -1341,8 +1342,9 @@
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-question {
-  color: var(--ns-dark-text);
-  background: transparent;
+  color: var(--ns-dark-text, #e0e0e0) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid #4a4a4a !important;
 }
 
 .ns-editor-container.ns-dark-mode .ns-ai-chat-input {
