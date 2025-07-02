@@ -357,12 +357,6 @@ export function AIChatNodeEditor({
         </div>
       )}
 
-        {/* Help Text */}
-        {!response && !error && !isLoading && (
-          <div className="ns-ai-chat-help">
-            <span className="ns-ai-chat-shortcut">Tip: Press Ctrl+Enter to ask</span>
-          </div>
-        )}
       </div>
     </div>
   );
