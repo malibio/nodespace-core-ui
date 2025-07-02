@@ -103,33 +103,70 @@ export class AIChatNodeKeyboardHandler implements NodeKeyboardHandler {
   handleShiftTab(node: BaseNode, context: EditContext): KeyboardResult {
     const { allNodes, callbacks } = context;
     
-    const success = outdentNode(allNodes, node.getNodeId());
-    
-    if (success) {
-      // Fire semantic structure change event
-      if (callbacks.onNodeStructureChange) {
-        const detailsObject = {
-          formerParentId: node.parent?.getNodeId() || null,
-          newParentId: node.parent?.parent?.getNodeId() || null, // Will be grandparent or null (root)
-          operation: 'outdent',
-          nodeContent: node.getContent(),
-          nodeType: node.getNodeType(),
-          hierarchyLevel: this.getNodeDepth(node),
-          timestamp: new Date().toISOString()
-        };
-        
-        callbacks.onNodeStructureChange('outdent', node.getNodeId(), detailsObject);
-      }
-      
-      return {
-        handled: true,
-        newNodes: [...allNodes],
-        focusNodeId: node.getNodeId(),
-        preventDefault: true
-      };
+    // Custom outdent logic for AIChatNode
+    if (!node.parent) {
+      return { handled: false }; // Can't outdent root nodes
     }
     
-    return { handled: false };
+    const currentParent = node.parent;
+    const grandparent = currentParent.parent;
+    const currentParentChildren = currentParent.children;
+    const nodeIndex = currentParentChildren.findIndex(child => child.getNodeId() === node.getNodeId());
+    
+    if (nodeIndex === -1) {
+      return { handled: false }; // Node not found in parent's children
+    }
+    
+    // Get siblings that were below the AIChatNode (they will stay with current parent)
+    const siblingsBelow = currentParentChildren.slice(nodeIndex + 1);
+    
+    // Remove the AIChatNode and all siblings below it from current parent
+    currentParent.children = currentParentChildren.slice(0, nodeIndex);
+    
+    // Add siblings back to current parent (they move up in the sibling order)
+    siblingsBelow.forEach(sibling => {
+      currentParent.addChild(sibling);
+    });
+    
+    // Move AIChatNode to grandparent level
+    if (grandparent) {
+      // Add AIChatNode as child of grandparent (at the end)
+      grandparent.addChild(node);
+    } else {
+      // Move to root level
+      node.parent = null;
+      // Find current parent in allNodes and add AIChatNode after it
+      const rootNodes = allNodes.filter(n => !n.parent);
+      const parentRootIndex = rootNodes.findIndex(n => n.getNodeId() === currentParent.getNodeId());
+      if (parentRootIndex !== -1) {
+        allNodes.splice(allNodes.indexOf(currentParent) + 1, 0, node);
+      } else {
+        allNodes.push(node);
+      }
+    }
+    
+    // Fire semantic structure change event
+    if (callbacks.onNodeStructureChange) {
+      const detailsObject = {
+        formerParentId: currentParent.getNodeId(),
+        newParentId: grandparent?.getNodeId() || null,
+        operation: 'outdent',
+        nodeContent: node.getContent(),
+        nodeType: node.getNodeType(),
+        hierarchyLevel: this.getNodeDepth(node),
+        siblingsMovedUp: siblingsBelow.map(s => s.getNodeId()),
+        timestamp: new Date().toISOString()
+      };
+      
+      callbacks.onNodeStructureChange('outdent', node.getNodeId(), detailsObject);
+    }
+    
+    return {
+      handled: true,
+      newNodes: [...allNodes],
+      focusNodeId: node.getNodeId(),
+      preventDefault: true
+    };
   }
   
   /**
