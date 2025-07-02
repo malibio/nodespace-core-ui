@@ -13,7 +13,7 @@ export class TextNode extends BaseNode {
     const indicator = document.createElement('span');
     indicator.className = 'node-indicator-text';
     indicator.innerHTML = '•';
-    indicator.style.color = '#6b7280';
+    indicator.style.color = 'var(--ns-circle-color, #6b7280)';
     indicator.style.fontSize = '16px';
     indicator.style.marginRight = '8px';
     return indicator;

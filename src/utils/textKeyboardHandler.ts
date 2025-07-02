@@ -41,33 +41,14 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
         updatedNodes.splice(rootIndex, 0, newNode); // Insert before current node
       }
       
-      // Legacy callback handling for backward compatibility (only if not using virtual manager)
-      if (!context.virtualNodeManager) {
-        // Fire semantic node creation event (fire-and-forget with upfront UUID)
-        if (callbacks.onNodeCreateWithId) {
-          const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), '', node.parent?.getNodeId(), newNode.getNodeType());
-          if (result instanceof Promise) {
-            result.catch(error => {
-              console.warn('Node creation callback failed:', error);
-            });
-          }
-        }
-        // Fallback to legacy callback for backward compatibility
-        else if (callbacks.onNodeCreate) {
-          const result = callbacks.onNodeCreate('', node.parent?.getNodeId(), newNode.getNodeType());
-          if (result instanceof Promise) {
-            result.catch(error => {
-              console.warn('Legacy node creation callback failed:', error);
-            });
-          }
-        }
-      }
+      // No immediate callback - content persistence will handle this when user types content
+      // The newNode exists in UI immediately, but no backend call until content exists
       
       return {
         handled: true,
         newNodes: updatedNodes,
-        focusNodeId: node.getNodeId(), // Stay focused on original node
-        cursorPosition: 0, // Cursor stays at beginning of original node
+        focusNodeId: newNode.getNodeId(), // Focus the new node above
+        cursorPosition: 0, // Cursor at beginning of new node
         preventDefault: true
       };
     }
@@ -119,26 +100,15 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       updatedNodes.splice(rootIndex + 1, 0, newNode);
     }
     
-    // Legacy callback handling for backward compatibility (only if not using virtual manager)
-    if (!context.virtualNodeManager) {
-      // Fire semantic node creation event (fire-and-forget with upfront UUID)
-      if (callbacks.onNodeCreateWithId) {
-        const result = callbacks.onNodeCreateWithId(newNode.getNodeId(), rightContent, node.parent?.getNodeId(), newNode.getNodeType());
-        if (result instanceof Promise) {
-          result.catch(error => {
-            console.warn('Node creation callback failed:', error);
-          });
-        }
-      }
-      // Fallback to legacy callback for backward compatibility
-      else if (callbacks.onNodeCreate) {
-        const result = callbacks.onNodeCreate(rightContent, node.parent?.getNodeId(), newNode.getNodeType());
-        if (result instanceof Promise) {
-          result.catch(error => {
-            console.warn('Legacy node creation callback failed:', error);
-          });
-        }
-      }
+    // Content persistence will handle backend creation when user types content
+    // If rightContent has actual content, schedule immediate persistence
+    if (context.contentPersistenceManager && rightContent.trim().length > 0) {
+      context.contentPersistenceManager.immediatelyPersistNode(
+        newNode.getNodeId(),
+        rightContent,
+        node.parent?.getNodeId(),
+        newNode.getNodeType()
+      );
     }
     
     return {
@@ -171,12 +141,23 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     if (currentContent.trim() === '') {
       const nodeId = node.getNodeId();
       
+      // Gather deletion context before removal
+      const deletionContext = {
+        type: 'empty_removal' as const,
+        parentId: node.parent?.getNodeId(),
+        childrenIds: node.children.map(c => c.getNodeId()),
+        childrenTransferredTo: prevNode.getNodeId(),
+        contentLost: currentContent,
+        siblingPosition: visibleNodes.indexOf(node),
+        mergedIntoNode: undefined
+      };
+      
       // Remove empty node
       this.removeNodeFromTree(node, allNodes);
       
-      // Fire semantic deletion event
+      // Fire semantic deletion event with context
       if (callbacks.onNodeDelete) {
-        callbacks.onNodeDelete(nodeId);
+        callbacks.onNodeDelete(nodeId, deletionContext);
       }
       
       return {
@@ -195,6 +176,17 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       
       const nodeId = node.getNodeId();
       
+      // Gather deletion context BEFORE removing/transferring anything
+      const deletionContext = {
+        type: 'content_merge' as const,
+        parentId: node.parent?.getNodeId(),
+        childrenIds: node.children.map(c => c.getNodeId()), // Capture BEFORE transfer
+        childrenTransferredTo: prevNode.getNodeId(),
+        contentLost: currentContent,
+        siblingPosition: visibleNodes.indexOf(node),
+        mergedIntoNode: prevNode.getNodeId()
+      };
+      
       // Handle children transfer before removing the node using sophisticated logic
       if (node.children.length > 0) {
         this.transferChildrenWithDepthPreservation(node, prevNode, allNodes, collapsedNodes);
@@ -202,9 +194,9 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       
       this.removeNodeFromTree(node, allNodes);
       
-      // Fire semantic deletion event
+      // Fire semantic deletion event with context
       if (callbacks.onNodeDelete) {
-        callbacks.onNodeDelete(nodeId);
+        callbacks.onNodeDelete(nodeId, deletionContext);
       }
       
       return {
@@ -246,6 +238,17 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     
     const nextNodeId = nextNode.getNodeId();
     
+    // Gather deletion context BEFORE transferring/removing anything
+    const deletionContext = {
+      type: 'content_merge' as const,
+      parentId: nextNode.parent?.getNodeId(),
+      childrenIds: nextNode.children.map(c => c.getNodeId()), // Capture BEFORE transfer
+      childrenTransferredTo: node.getNodeId(),
+      contentLost: nextContent,
+      siblingPosition: visibleNodes.indexOf(nextNode),
+      mergedIntoNode: node.getNodeId()
+    };
+    
     // Transfer children from next node with depth preservation
     if (nextNode.children.length > 0) {
       this.transferChildrenWithDepthPreservation(nextNode, node, allNodes, collapsedNodes);
@@ -253,9 +256,9 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     
     this.removeNodeFromTree(nextNode, allNodes);
     
-    // Fire semantic deletion event
+    // Fire semantic deletion event with context
     if (callbacks.onNodeDelete) {
-      callbacks.onNodeDelete(nextNodeId);
+      callbacks.onNodeDelete(nextNodeId, deletionContext);
     }
     
     return {
@@ -270,12 +273,56 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   handleTab(node: BaseNode, context: EditContext): KeyboardResult {
     const { allNodes, callbacks } = context;
     
+    console.log('⌨️  TAB DEBUG: Tab key pressed');
+    console.log('⌨️  Current node:', `"${node.getContent()}" (${node.getNodeId().slice(-8)})`);
+    console.log('⌨️  Total nodes in context:', allNodes.length);
+    console.log('⌨️  All root nodes:', allNodes.map(n => `"${n.getContent()}" (${n.getNodeId().slice(-8)})`));
+    
+    // Get the previous sibling before indenting to include parent info in callback
+    const siblings = node.parent ? node.parent.children : allNodes;
+    const nodeIndex = siblings.findIndex(child => child.getNodeId() === node.getNodeId());
+    const previousSibling = nodeIndex > 0 ? siblings[nodeIndex - 1] : null;
+    const parentId = previousSibling?.getNodeId() || null; // Capture the ID before indentNode
+
+    console.log('🔔 TAB DEBUG: About to indent, parentId will be:', parentId);
+    console.log('🆔 ID DEBUG: Current node full ID:', node.getNodeId());
+    console.log('🆔 ID DEBUG: Parent node full ID:', parentId);
+    console.log('🆔 ID DEBUG: Node content:', `"${node.getContent()}"`);
+    console.log('🆔 ID DEBUG: All nodes in context:', allNodes.map(n => ({ 
+      id: n.getNodeId(), 
+      content: `"${n.getContent()}"` 
+    })));
+
     const success = indentNode(allNodes, node.getNodeId());
     
     if (success) {
-      // Fire semantic structure change event
+      console.log('✅ TAB DEBUG: Indentation successful');
+      
+      // Fire semantic structure change event with parent information
       if (callbacks.onNodeStructureChange) {
-        callbacks.onNodeStructureChange('indent', node.getNodeId());
+        const detailsObject = {
+          parentId: parentId,
+          newParentId: parentId, // Will be the new parent after indent
+          operation: 'indent',
+          nodeContent: node.getContent(),
+          nodeType: node.getNodeType(),
+          previousSiblingId: parentId,
+          hierarchyLevel: node.parent ? this.getNodeDepth(node) : 0,
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log('🔔 TAB DEBUG: Firing onNodeStructureChange callback');
+        console.log('📤 EVENT HANDLER: onNodeStructureChange');
+        console.log('📤 Parameter 1 (operation):', 'indent');
+        console.log('📤 Parameter 2 (nodeId):', node.getNodeId());
+        console.log('📤 Parameter 3 (details object):', JSON.stringify(detailsObject, null, 2));
+        
+        callbacks.onNodeStructureChange('indent', node.getNodeId(), detailsObject);
+        
+        console.log('✅ EVENT SENT: onNodeStructureChange fired successfully');
+      } else {
+        console.log('⚠️  TAB DEBUG: No onNodeStructureChange callback available');
+        console.log('⚠️  Available callbacks:', Object.keys(callbacks));
       }
       
       return {
@@ -286,18 +333,49 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       };
     }
     
+    console.log('❌ TAB DEBUG: Indentation failed');
     return { handled: false };
   }
   
   handleShiftTab(node: BaseNode, context: EditContext): KeyboardResult {
     const { allNodes, callbacks } = context;
     
+    console.log('⌨️  SHIFT+TAB DEBUG: Shift+Tab key pressed');
+    console.log('⌨️  Current node:', `"${node.getContent()}" (${node.getNodeId().slice(-8)})`);
+    console.log('⌨️  Has parent:', !!node.parent);
+    if (node.parent) {
+      console.log('⌨️  Parent:', `"${node.parent.getContent()}" (${node.parent.getNodeId().slice(-8)})`);
+    }
+    
     const success = outdentNode(allNodes, node.getNodeId());
     
     if (success) {
+      console.log('✅ SHIFT+TAB DEBUG: Outdentation successful');
+      
       // Fire semantic structure change event
       if (callbacks.onNodeStructureChange) {
-        callbacks.onNodeStructureChange('outdent', node.getNodeId());
+        const detailsObject = {
+          formerParentId: node.parent?.getNodeId() || null,
+          newParentId: node.parent?.parent?.getNodeId() || null, // Will be grandparent or null (root)
+          operation: 'outdent',
+          nodeContent: node.getContent(),
+          nodeType: node.getNodeType(),
+          hierarchyLevel: this.getNodeDepth(node),
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log('🔔 SHIFT+TAB DEBUG: Firing onNodeStructureChange callback');
+        console.log('📤 EVENT HANDLER: onNodeStructureChange');
+        console.log('📤 Parameter 1 (operation):', 'outdent');
+        console.log('📤 Parameter 2 (nodeId):', node.getNodeId());
+        console.log('📤 Parameter 3 (details object):', JSON.stringify(detailsObject, null, 2));
+        
+        callbacks.onNodeStructureChange('outdent', node.getNodeId(), detailsObject);
+        
+        console.log('✅ EVENT SENT: onNodeStructureChange fired successfully');
+      } else {
+        console.log('⚠️  SHIFT+TAB DEBUG: No onNodeStructureChange callback available');
+        console.log('⚠️  Available callbacks:', Object.keys(callbacks));
       }
       
       return {
@@ -308,6 +386,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       };
     }
     
+    console.log('❌ SHIFT+TAB DEBUG: Outdentation failed');
     return { handled: false };
   }
   
@@ -316,6 +395,19 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
    */
   private getRootNodes(context: EditContext): BaseNode[] {
     return context.allNodes.filter(node => !node.parent);
+  }
+
+  /**
+   * Get the depth of a node in the hierarchy
+   */
+  private getNodeDepth(node: BaseNode): number {
+    let depth = 0;
+    let current = node.parent;
+    while (current) {
+      depth++;
+      current = current.parent;
+    }
+    return depth;
   }
 
   /**
@@ -336,19 +428,6 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
         allNodes.splice(rootIndex, 1);
       }
     }
-  }
-
-  /**
-   * Get the depth of a node in the hierarchy
-   */
-  private getNodeDepth(node: BaseNode): number {
-    let depth = 0;
-    let current = node.parent;
-    while (current) {
-      depth++;
-      current = current.parent;
-    }
-    return depth;
   }
 
   /**

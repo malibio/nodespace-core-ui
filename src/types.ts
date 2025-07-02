@@ -17,16 +17,18 @@ export interface NodeSpaceCallbacks {
   onNodesChange?: (nodes: BaseNode[]) => void;
   onNodeChange?: (nodeId: string, content: string) => void;
   
-  // DEPRECATED: Old callback that returns ID (will be removed)
-  onNodeCreate?: (content: string, parentId?: string, nodeType?: string) => Promise<string> | string;
-  
-  // NEW: Fire-and-forget callback with upfront UUID (NS-124)
+  // Content-based node creation (only called when content has non-whitespace characters)
   onNodeCreateWithId?: (nodeId: string, content: string, parentId?: string, nodeType?: string) => Promise<void> | void;
   
-  // NEW: Virtual-to-real node conversion callback (NS-117)
-  onNewNodeCreated?: (node: BaseNode, getNewNodeIdLambda: (newNodeId: string) => void) => void;
-  
-  onNodeDelete?: (nodeId: string) => void;
+  onNodeDelete?: (nodeId: string, deletionContext?: {
+    type: 'empty_removal' | 'content_merge';
+    parentId?: string;
+    childrenIds: string[];
+    childrenTransferredTo?: string;
+    contentLost?: string;
+    siblingPosition: number;
+    mergedIntoNode?: string;
+  }) => void;
   onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 
   // Collapsed state management

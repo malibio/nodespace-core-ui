@@ -116,8 +116,8 @@ export class NodeCRUDManager {
       const newNode = NodeFactory.createNodeByType(nodeType, content);
       const nodeId = newNode.getNodeId();
       
-      // Use new fire-and-forget callback with upfront UUID
-      if (this.callbacks.onNodeCreateWithId) {
+      // Only call backend if content has non-whitespace characters
+      if (content.trim().length > 0 && this.callbacks.onNodeCreateWithId) {
         const result = this.callbacks.onNodeCreateWithId(nodeId, content, parentId, nodeType);
         
         // Handle both sync and async responses (fire-and-forget)
@@ -125,18 +125,6 @@ export class NodeCRUDManager {
           result.catch(error => {
             // Callback failures are handled silently for fire-and-forget pattern
             console.warn('Node creation callback failed:', error);
-          });
-        }
-      }
-      // Fallback to old callback for backward compatibility
-      else if (this.callbacks.onNodeCreate) {
-        const result = this.callbacks.onNodeCreate(content, parentId, nodeType);
-        
-        // Handle both sync and async responses
-        if (result instanceof Promise) {
-          result.catch(error => {
-            // Callback failures are handled silently
-            console.warn('Legacy node creation callback failed:', error);
           });
         }
       }

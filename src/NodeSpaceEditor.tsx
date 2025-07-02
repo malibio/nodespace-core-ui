@@ -1,11 +1,12 @@
-import React, { useRef, useCallback, useEffect, useMemo } from 'react';
-import { BaseNode, DateFormat } from './nodes';
+import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { BaseNode, DateFormat, TextNode } from './nodes';
 import { RenderNodeTree, NodeSpaceCallbacks } from './hierarchy';
 import { countAllNodes } from './utils';
 import { useCollapsedStatePersistence } from './hooks/useCollapsedStatePersistence';
 import { CollapsedStateLoader } from './components/CollapsedStateLoader';
 import { NodeCRUDManager, NodeFactory } from './utils/crudOperations';
 import { VirtualNodeManager } from './utils/virtualNodeManager';
+import { ContentPersistenceManager } from './utils/contentPersistence';
 import type { CollapsePersistenceConfig } from './types/persistence';
 
 export interface NodeSpaceEditorProps {
@@ -91,7 +92,44 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
   collapsibleNodeTypes = new Set(['text', 'task', 'date', 'entity', 'image'])
 }, ref) => {
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
-  const totalNodeCount = countAllNodes(nodes);
+  
+  // Empty state handling - auto-create first TextNode when nodes array is empty
+  const [displayNodes, setDisplayNodes] = useState<BaseNode[]>(() => {
+    if (nodes.length === 0) {
+      // Create initial empty TextNode (no backend call yet)
+      const initialNode = new TextNode('');
+      return [initialNode];
+    }
+    return nodes;
+  });
+
+  // Update display nodes when props change
+  useEffect(() => {
+    if (nodes.length === 0) {
+      // Always create empty node when nodes are empty - simpler logic
+      const initialNode = new TextNode('');
+      setDisplayNodes([initialNode]);
+    } else {
+      setDisplayNodes(nodes);
+    }
+  }, [nodes]);
+
+  const totalNodeCount = countAllNodes(displayNodes);
+  
+  // Content persistence manager - create once and update callbacks as needed
+  const contentPersistenceManager = useMemo(() => {
+    return new ContentPersistenceManager(callbacks, 500); // 500ms debounce
+  }, []); // Empty deps = create once, never recreate
+
+  // Update callbacks when they change, preserving debounce state
+  useEffect(() => {
+    contentPersistenceManager.updateCallbacks(callbacks);
+    
+    // Development warning for excessive callback changes
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔄 Core-UI: Callbacks updated, debounce state preserved');
+    }
+  }, [callbacks, contentPersistenceManager]);
 
   // Replace current state management with persistence hook
   const {
@@ -119,30 +157,30 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
   // NEW: Unified CRUD Manager (NS-121)
   const crudManager = useMemo(() => {
     if (enableUnifiedCRUD) {
-      return new NodeCRUDManager(nodes, callbacks);
+      return new NodeCRUDManager(displayNodes, callbacks);
     }
     return null;
-  }, [nodes, callbacks, enableUnifiedCRUD]);
+  }, [displayNodes, callbacks, enableUnifiedCRUD]);
 
   // NEW: Virtual Node Manager (NS-117)
   const virtualNodeManager = useMemo(() => {
     if (enableVirtualNodes) {
       const handleTreeUpdate = (updatedNodes: BaseNode[]) => {
         if (callbacks.onNodesChange) {
-          callbacks.onNodesChange(updatedNodes.length > 0 ? updatedNodes : nodes);
+          callbacks.onNodesChange(updatedNodes.length > 0 ? updatedNodes : displayNodes);
         }
       };
       return new VirtualNodeManager(callbacks, handleTreeUpdate);
     }
     return null;
-  }, [enableVirtualNodes, callbacks, nodes]);
+  }, [enableVirtualNodes, callbacks, displayNodes]);
 
   // Update CRUD manager when nodes or callbacks change
   useEffect(() => {
     if (crudManager) {
-      crudManager.setNodes(nodes);
+      crudManager.setNodes(displayNodes);
     }
-  }, [nodes, crudManager]);
+  }, [displayNodes, crudManager]);
 
   // Cleanup virtual node manager on unmount
   useEffect(() => {
@@ -265,7 +303,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
     >
       <div className={`ns-editor-container ${className}`}>
         <RenderNodeTree
-          nodes={nodes}
+          nodes={displayNodes}
           focusedNodeId={focusedNodeId}
           textareaRefs={textareaRefs}
           onRemoveNode={handleRemoveNode}
@@ -278,6 +316,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
           onCollapseChange={handleNodeCollapseToggle}
           onFocusedNodeIdChange={handleFocusedNodeIdChange}
           virtualNodeManager={virtualNodeManager || undefined}
+          contentPersistenceManager={contentPersistenceManager}
         />
       </div>
     </CollapsedStateLoader>

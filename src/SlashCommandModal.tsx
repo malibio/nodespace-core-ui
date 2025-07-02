@@ -78,6 +78,7 @@ export function SlashCommandModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isVisible, onClose]);
 
+
   if (!isVisible) {
     return null;
   }

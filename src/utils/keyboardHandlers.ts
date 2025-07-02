@@ -1,6 +1,7 @@
 import { BaseNode } from '../nodes';
 import { NodeSpaceCallbacks } from '../types';
 import { VirtualNodeManager } from './virtualNodeManager';
+import { ContentPersistenceManager } from './contentPersistence';
 
 /**
  * Context information available to keyboard handlers
@@ -13,6 +14,7 @@ export interface EditContext {
   callbacks: NodeSpaceCallbacks;
   collapsedNodes?: Set<string>;
   virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117 virtual node conversion
+  contentPersistenceManager?: ContentPersistenceManager; // NEW: Content-based persistence
 }
 
 /**

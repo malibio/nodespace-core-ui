@@ -71,14 +71,9 @@ export class VirtualNodeManager {
         this.finalizeConversion(virtualNodeId, newNodeId);
       };
 
-      // Emit event to desktop-app for processing
-      if (this.callbacks.onNewNodeCreated) {
-        this.callbacks.onNewNodeCreated(virtualNode, getNewNodeIdLambda);
-      } else {
-        // Fallback: if no new callback, use existing fire-and-forget pattern
-        console.warn('onNewNodeCreated callback not provided, falling back to fire-and-forget');
-        this.finalizeConversion(virtualNodeId, virtualNode.getNodeId());
-      }
+      // Use fire-and-forget pattern with contentPersistenceManager
+      // No callback needed - virtual nodes are now handled by content persistence
+      this.finalizeConversion(virtualNodeId, virtualNode.getNodeId());
     } catch (error) {
       console.error('Virtual to real conversion failed:', error);
       this.revertToVirtual(virtualNodeId);
