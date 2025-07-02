@@ -101,6 +101,12 @@ export function indentNode(rootNodes: BaseNode[], nodeId: string): boolean {
 
   const previousSibling = siblings[nodeIndex - 1];
 
+  // Check if previous sibling can accept children
+  if (previousSibling.getNodeType() === 'ai-chat') {
+    // AIChatNodes cannot have children
+    return false;
+  }
+
   // Remove node from current parent's children (or root nodes list)
   siblings.splice(nodeIndex, 1);
   if (nodeToIndent.parent) {

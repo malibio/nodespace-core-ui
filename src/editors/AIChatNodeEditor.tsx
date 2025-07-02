@@ -27,6 +27,14 @@ export function AIChatNodeEditor({
   const [currentAssistantMessage, setCurrentAssistantMessage] = useState<ChatMessage | null>(null);
   const triggerUpdate = useCallback(() => forceUpdate({}), []);
 
+  // Handle title/name changes
+  const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newTitle = e.target.value;
+    chatNode.setTitle(newTitle);
+    onContentChange(newTitle);
+    triggerUpdate();
+  };
+
   // Handle question input changes
   const handleQuestionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newQuestion = e.target.value;
@@ -84,12 +92,90 @@ export function AIChatNodeEditor({
   const sources = chatNode.getSources();
 
   return (
-    <div className="ns-ai-chat-editor">
-      {/* Question Input Section */}
-      <div className="ns-ai-chat-input-section">
+    <div className="ns-ai-chat-container">
+      {/* Title/Name Section - Outside chat area, like TextNode */}
+      <div className="ns-ai-chat-editor-container" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        <div 
+          className="ns-ai-chat-indicator ns-node-indicator"
+          style={{
+            position: 'relative',
+            marginTop: '10px',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '12px',
+            height: '12px'
+          }}
+        >
+          {node.children.length > 0 && (
+            <svg 
+              width={12} 
+              height={12} 
+              viewBox="0 0 12 12"
+              style={{ 
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <circle 
+                cx="6" 
+                cy="6" 
+                r="3.25" 
+                fill="transparent"
+                stroke="var(--ns-parent-border-color, #808080)"
+                strokeWidth="1.5"
+              />
+            </svg>
+          )}
+          
+          <svg 
+            width={12} 
+            height={12} 
+            viewBox="0 -960 960 960"
+            style={{ 
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <path 
+              d="M80-120v-80h800v80H80Zm680-160v-560h60v560h-60Zm-600 0 210-560h100l210 560h-96l-50-144H308l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z"
+              fill="var(--ns-circle-color, black)"
+            />
+          </svg>
+        </div>
         <TextareaAutosize
           ref={(el) => {
-            textareaRefs.current[nodeId] = el;
+            textareaRefs.current[nodeId] = el; // Use main nodeId for focus management
+          }}
+          className="ns-node-textarea"
+          value={chatNode.getTitle()}
+          onChange={handleTitleChange}
+          onFocus={() => onFocus(nodeId)}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+          onClick={onClick}
+          placeholder="AI Chat Title..."
+          minRows={1}
+          style={{
+            resize: 'none',
+            overflow: 'hidden',
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+          }}
+        />
+      </div>
+
+      {/* Chat Area - Separate container below title */}
+      <div className="ns-ai-chat-editor">
+        {/* Question Input Section */}
+        <div className="ns-ai-chat-input-section">
+        <TextareaAutosize
+          ref={(el) => {
+            textareaRefs.current[`${nodeId}-question`] = el;
           }}
           className="ns-node-textarea ns-ai-chat-question"
           value={question}
@@ -271,12 +357,13 @@ export function AIChatNodeEditor({
         </div>
       )}
 
-      {/* Help Text */}
-      {!response && !error && !isLoading && (
-        <div className="ns-ai-chat-help">
-          <span className="ns-ai-chat-shortcut">Tip: Press Ctrl+Enter to ask</span>
-        </div>
-      )}
+        {/* Help Text */}
+        {!response && !error && !isLoading && (
+          <div className="ns-ai-chat-help">
+            <span className="ns-ai-chat-shortcut">Tip: Press Ctrl+Enter to ask</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -237,7 +237,7 @@
   padding: 6px 8px;
   border-radius: 0;
   background: transparent;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-family: inherit;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
   margin-left: -2px;
@@ -499,6 +499,7 @@
 /* SVG Icon System */
 .ns-icon {
   color: var(--ns-circle-color, #374151);
+  fill: var(--ns-circle-color, #374151);
   transition: color 0.2s ease;
 }
 
@@ -518,17 +519,50 @@
 }
 
 /* AI Chat Node Styles */
+.ns-ai-chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ns-ai-chat-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ns-ai-chat-editor-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.ns-ai-chat-indicator {
+  cursor: default;
+  margin-top: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+/* AI Chat title uses same base styling as other nodes */
+
 .ns-ai-chat-editor {
   display: flex;
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  border: 1px solid #e5e7eb;
+  border: none;
   border-radius: 8px;
   padding: 16px;
-  background: #fafafa;
+  background: #f3f4f6;
   margin: 0;
-  /* Adjust margin to align border with text content */
+  /* Adjust margin to align with text content */
   margin-left: 6px;
   padding-left: 10px;
 }
@@ -1195,6 +1229,18 @@
   color: var(--ns-dark-text);
 }
 
+/* Global text color override for dark mode */
+.ns-editor-container.ns-dark-mode * {
+  color: inherit;
+}
+
+/* Ensure all text elements use dark mode colors */
+.ns-editor-container.ns-dark-mode input,
+.ns-editor-container.ns-dark-mode textarea,
+.ns-editor-container.ns-dark-mode div {
+  color: var(--ns-dark-text);
+}
+
 .ns-editor-container.ns-dark-mode .ns-editor-status {
   color: var(--ns-dark-text-muted);
 }
@@ -1233,6 +1279,13 @@
   --ns-circle-color: var(--ns-dark-text);
   --ns-parent-border-color: #888;
   --ns-background-color: var(--ns-dark-surface);
+  color: var(--ns-circle-color);
+}
+
+/* All SVG icons in indicators should inherit from ns-circle-color */
+.ns-editor-container.ns-dark-mode .ns-node-indicator svg {
+  fill: var(--ns-circle-color);
+  color: var(--ns-circle-color);
 }
 
 /* Hierarchical lines */
@@ -1274,6 +1327,24 @@
 }
 
 /* AI Chat nodes */
+.ns-editor-container.ns-dark-mode .ns-ai-chat-container {
+  color: var(--ns-dark-text);
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-editor {
+  background: #333333;
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-title {
+  color: var(--ns-dark-text);
+  background: transparent;
+}
+
+.ns-editor-container.ns-dark-mode .ns-ai-chat-question {
+  color: var(--ns-dark-text);
+  background: transparent;
+}
+
 .ns-editor-container.ns-dark-mode .ns-ai-chat-input {
   background: var(--ns-dark-surface);
   color: var(--ns-dark-text);
@@ -1324,29 +1395,25 @@
 }
 
 /* Slash command modal */
-.ns-editor-container.ns-dark-mode .ns-slash-modal {
+.ns-editor-container.ns-dark-mode .ns-slash-command-modal {
   background: var(--ns-dark-surface);
   border-color: var(--ns-dark-border);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-.ns-editor-container.ns-dark-mode .ns-slash-option {
+.ns-editor-container.ns-dark-mode .ns-slash-command-option {
   color: var(--ns-dark-text);
   border-color: var(--ns-dark-border);
 }
 
-.ns-editor-container.ns-dark-mode .ns-slash-option:hover,
-.ns-editor-container.ns-dark-mode .ns-slash-option.selected {
+.ns-editor-container.ns-dark-mode .ns-slash-command-option:hover,
+.ns-editor-container.ns-dark-mode .ns-slash-command-option.ns-selected {
   background: var(--ns-dark-surface-hover);
   color: #fff;
 }
 
-.ns-editor-container.ns-dark-mode .ns-slash-option-label {
+.ns-editor-container.ns-dark-mode .ns-slash-command-label {
   color: var(--ns-dark-text);
-}
-
-.ns-editor-container.ns-dark-mode .ns-slash-option-description {
-  color: var(--ns-dark-text-muted);
 }
 
 /* Persistence loading components */

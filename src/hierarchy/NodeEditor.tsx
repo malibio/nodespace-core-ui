@@ -8,6 +8,7 @@ import { getVisibleNodes, KeyboardHandlerRegistry, initializeKeyboardHandlers, N
 import type { KeyboardResult } from '../utils';
 import type { ImageUploadResult, NodeSpaceCallbacks } from '../types';
 import { VirtualNodeManager } from '../utils/virtualNodeManager';
+import { ContentPersistenceManager } from '../utils/contentPersistence';
 
 interface NodeEditorProps {
   node: BaseNode;
@@ -26,6 +27,7 @@ interface NodeEditorProps {
   focusedNodeId: string | null;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
   virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
+  contentPersistenceManager?: ContentPersistenceManager; // NEW: Content-based persistence
 }
 
 // Helper function to calculate node depth in hierarchy
@@ -53,7 +55,8 @@ export function NodeEditor({
   collapsedNodes,
   focusedNodeId,
   onFocusedNodeIdChange,
-  virtualNodeManager
+  virtualNodeManager,
+  contentPersistenceManager
 }: NodeEditorProps) {
   const nodeId = node.getNodeId();
   
@@ -111,9 +114,11 @@ export function NodeEditor({
     const cursorPosition = textarea.selectionStart;
     const content = node.getContent();
     
+    
     // Check if user typed "/" at the beginning of an empty node
     const contentBeforeCursor = content.substring(0, cursorPosition);
     const lastSlashIndex = contentBeforeCursor.lastIndexOf('/');
+    
     
     // Only show modal if "/" is at the very beginning and node has no other content
     if (lastSlashIndex === 0) {
@@ -147,6 +152,7 @@ export function NodeEditor({
         
         updateModalPosition();
         setShowSlashModal(true);
+      } else {
       }
     }
   };
@@ -335,7 +341,8 @@ export function NodeEditor({
       textareaRefs,
       callbacks,
       collapsedNodes,
-      virtualNodeManager // NEW: For NS-117
+      virtualNodeManager, // NEW: For NS-117
+      contentPersistenceManager // NEW: Content-based persistence
     };
     
     let result: KeyboardResult = { handled: false };
@@ -437,25 +444,50 @@ export function NodeEditor({
       
       // NOTE: Async ID synchronization removed in NS-124 - UUIDs generated upfront, no swapping needed
 
-      if (result.focusNodeId && result.cursorPosition !== undefined) {
-        setTimeout(() => {
+      // Apply focus changes immediately after DOM updates
+      if (result.focusNodeId) {
+        
+        // Update parent component's focus tracking first
+        onFocusedNodeIdChange(result.focusNodeId);
+        
+        // Then focus the DOM element using requestAnimationFrame for proper timing
+        requestAnimationFrame(() => {
           const targetTextarea = textareaRefs.current[result.focusNodeId!];
+          
           if (targetTextarea) {
             targetTextarea.focus();
-            targetTextarea.setSelectionRange(result.cursorPosition!, result.cursorPosition!);
+            if (result.cursorPosition !== undefined) {
+              targetTextarea.setSelectionRange(result.cursorPosition, result.cursorPosition);
+            }
+          } else {
+            // If textarea not found immediately, try again after a short delay for new nodes
+            setTimeout(() => {
+              const retryTextarea = textareaRefs.current[result.focusNodeId!];
+              if (retryTextarea) {
+                retryTextarea.focus();
+                if (result.cursorPosition !== undefined) {
+                  retryTextarea.setSelectionRange(result.cursorPosition, result.cursorPosition);
+                }
+              } else {
+              }
+            }, 10);
           }
-        }, 0);
-      } else if (result.focusNodeId) {
-        setTimeout(() => {
-          const targetTextarea = textareaRefs.current[result.focusNodeId!];
-          if (targetTextarea) {
-            targetTextarea.focus();
-          }
-        }, 0);
+        });
       }
     }
   };
   const handleBlur = () => {
+    // Immediately persist content on blur if it exists
+    if (contentPersistenceManager) {
+      const content = node.getContent();
+      contentPersistenceManager.immediatelyPersistNode(
+        nodeId,
+        content,
+        node.parent?.getNodeId(),
+        node.getNodeType()
+      );
+    }
+    
     onBlur();
   };
 
@@ -467,8 +499,8 @@ export function NodeEditor({
 
   return (
     <>
-      {/* Only show NodeIndicator for non-task nodes - TaskNodes handle their own checkbox */}
-      {node.getNodeType() !== 'task' && (
+      {/* Only show NodeIndicator for nodes that don't handle their own indicators */}
+      {node.getNodeType() !== 'task' && node.getNodeType() !== 'ai-chat' && (
         <NodeIndicator 
           node={node}
           className="ns-node-indicator"
@@ -502,12 +534,22 @@ export function NodeEditor({
             callbacks.onNodeChange?.(nodeId, content);
           }, 300); // 300ms debounce delay
           
-          // Check for slash command after content changes
+          // Schedule content persistence (only for nodes with actual content)
+          if (contentPersistenceManager) {
+            contentPersistenceManager.scheduleContentPersistence(
+              nodeId,
+              content,
+              node.parent?.getNodeId(),
+              node.getNodeType()
+            );
+          }
+          
+          // Check for slash command only if content starts with '/'
           const textarea = textareaRefs.current[nodeId];
-          if (textarea && content.includes('/')) {
+          if (textarea && content.startsWith('/')) {
             setTimeout(() => handleSlashCommand(textarea), 0);
-          } else if (!content.includes('/')) {
-            // Hide modal if slash was removed
+          } else if (!content.startsWith('/')) {
+            // Hide modal if slash was removed from beginning
             setShowSlashModal(false);
             setSlashQuery('');
             updateModalPositionRef.current = null;

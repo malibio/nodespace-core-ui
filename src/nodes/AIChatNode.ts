@@ -97,6 +97,17 @@ export class AIChatNode extends BaseNode {
   }
 
   // Chat-specific methods
+  getTitle(): string {
+    return this.enhancedData.title || '';
+  }
+
+  setTitle(title: string): void {
+    this.enhancedData.title = title;
+    this.enhancedData.date_time_modified = new Date();
+    // Keep base content in sync for persistence
+    super.setContent(title);
+  }
+
   getQuestion(): string {
     return this.chatData.question;
   }
@@ -378,5 +389,14 @@ export class AIChatNode extends BaseNode {
       });
     }
     return node;
+  }
+
+  /**
+   * Override addChild to prevent AIChatNodes from having children
+   * AIChatNodes are leaf nodes and should not accept children
+   */
+  addChild(child: BaseNode): void {
+    console.warn('AIChatNode cannot have children. Ignoring addChild operation.');
+    // Do nothing - AIChatNodes are leaf nodes
   }
 }
