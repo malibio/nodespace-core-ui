@@ -114,7 +114,10 @@ export class AIChatNode extends BaseNode {
 
   setQuestion(question: string): void {
     this.chatData.question = question;
-    this.setContent(question); // Keep base content in sync
+    // Don't update title when question changes - they should be independent
+    super.setContent(question); // Update base content without affecting title
+    this.enhancedData.content = question;
+    this.enhancedData.date_time_modified = new Date();
   }
 
   getResponse(): string {
@@ -158,7 +161,7 @@ export class AIChatNode extends BaseNode {
     super.setContent(content);
     this.chatData.question = content;
     this.enhancedData.content = content;
-    this.enhancedData.title = content || 'Untitled Chat';
+    // Don't automatically update title from content - let setTitle handle title changes
     this.enhancedData.date_time_modified = new Date();
   }
 
