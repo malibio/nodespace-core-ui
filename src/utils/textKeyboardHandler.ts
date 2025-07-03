@@ -17,7 +17,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     
     // Special case: cursor at beginning - create virtual node above
     if (cursorPosition === 0) {
-      // NEW: Use virtual node manager for NS-117
+      // Use virtual node manager if available
       const newNode = context.virtualNodeManager 
         ? context.virtualNodeManager.createVirtualNode(
             () => NodeFactory.createSimilarNode(node, ''),
@@ -59,7 +59,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
     
     node.setContent(leftContent);
     
-    // NEW: Use virtual node manager for NS-117
+    // Use virtual node manager if available
     const newNode = context.virtualNodeManager 
       ? context.virtualNodeManager.createVirtualNode(
           () => NodeFactory.createSimilarNode(node, rightContent),
@@ -273,31 +273,15 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   handleTab(node: BaseNode, context: EditContext): KeyboardResult {
     const { allNodes, callbacks } = context;
     
-    console.log('⌨️  TAB DEBUG: Tab key pressed');
-    console.log('⌨️  Current node:', `"${node.getContent()}" (${node.getNodeId().slice(-8)})`);
-    console.log('⌨️  Total nodes in context:', allNodes.length);
-    console.log('⌨️  All root nodes:', allNodes.map(n => `"${n.getContent()}" (${n.getNodeId().slice(-8)})`));
-    
     // Get the previous sibling before indenting to include parent info in callback
     const siblings = node.parent ? node.parent.children : allNodes;
     const nodeIndex = siblings.findIndex(child => child.getNodeId() === node.getNodeId());
     const previousSibling = nodeIndex > 0 ? siblings[nodeIndex - 1] : null;
     const parentId = previousSibling?.getNodeId() || null; // Capture the ID before indentNode
 
-    console.log('🔔 TAB DEBUG: About to indent, parentId will be:', parentId);
-    console.log('🆔 ID DEBUG: Current node full ID:', node.getNodeId());
-    console.log('🆔 ID DEBUG: Parent node full ID:', parentId);
-    console.log('🆔 ID DEBUG: Node content:', `"${node.getContent()}"`);
-    console.log('🆔 ID DEBUG: All nodes in context:', allNodes.map(n => ({ 
-      id: n.getNodeId(), 
-      content: `"${n.getContent()}"` 
-    })));
-
     const success = indentNode(allNodes, node.getNodeId());
     
     if (success) {
-      console.log('✅ TAB DEBUG: Indentation successful');
-      
       // Fire semantic structure change event with parent information
       if (callbacks.onNodeStructureChange) {
         const detailsObject = {
@@ -311,18 +295,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
           timestamp: new Date().toISOString()
         };
         
-        console.log('🔔 TAB DEBUG: Firing onNodeStructureChange callback');
-        console.log('📤 EVENT HANDLER: onNodeStructureChange');
-        console.log('📤 Parameter 1 (operation):', 'indent');
-        console.log('📤 Parameter 2 (nodeId):', node.getNodeId());
-        console.log('📤 Parameter 3 (details object):', JSON.stringify(detailsObject, null, 2));
-        
         callbacks.onNodeStructureChange('indent', node.getNodeId(), detailsObject);
-        
-        console.log('✅ EVENT SENT: onNodeStructureChange fired successfully');
-      } else {
-        console.log('⚠️  TAB DEBUG: No onNodeStructureChange callback available');
-        console.log('⚠️  Available callbacks:', Object.keys(callbacks));
       }
       
       return {
@@ -333,25 +306,15 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       };
     }
     
-    console.log('❌ TAB DEBUG: Indentation failed');
     return { handled: false };
   }
   
   handleShiftTab(node: BaseNode, context: EditContext): KeyboardResult {
     const { allNodes, callbacks } = context;
     
-    console.log('⌨️  SHIFT+TAB DEBUG: Shift+Tab key pressed');
-    console.log('⌨️  Current node:', `"${node.getContent()}" (${node.getNodeId().slice(-8)})`);
-    console.log('⌨️  Has parent:', !!node.parent);
-    if (node.parent) {
-      console.log('⌨️  Parent:', `"${node.parent.getContent()}" (${node.parent.getNodeId().slice(-8)})`);
-    }
-    
     const success = outdentNode(allNodes, node.getNodeId());
     
     if (success) {
-      console.log('✅ SHIFT+TAB DEBUG: Outdentation successful');
-      
       // Fire semantic structure change event
       if (callbacks.onNodeStructureChange) {
         const detailsObject = {
@@ -364,18 +327,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
           timestamp: new Date().toISOString()
         };
         
-        console.log('🔔 SHIFT+TAB DEBUG: Firing onNodeStructureChange callback');
-        console.log('📤 EVENT HANDLER: onNodeStructureChange');
-        console.log('📤 Parameter 1 (operation):', 'outdent');
-        console.log('📤 Parameter 2 (nodeId):', node.getNodeId());
-        console.log('📤 Parameter 3 (details object):', JSON.stringify(detailsObject, null, 2));
-        
         callbacks.onNodeStructureChange('outdent', node.getNodeId(), detailsObject);
-        
-        console.log('✅ EVENT SENT: onNodeStructureChange fired successfully');
-      } else {
-        console.log('⚠️  SHIFT+TAB DEBUG: No onNodeStructureChange callback available');
-        console.log('⚠️  Available callbacks:', Object.keys(callbacks));
       }
       
       return {
@@ -386,7 +338,6 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
       };
     }
     
-    console.log('❌ SHIFT+TAB DEBUG: Outdentation failed');
     return { handled: false };
   }
   

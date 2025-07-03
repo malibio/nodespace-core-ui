@@ -6,6 +6,6 @@ export { TaskNodeKeyboardHandler } from './taskKeyboardHandler';
 export { initializeKeyboardHandlers } from './keyboardRegistry';
 export { updateNodeId } from './nodeIdSync';
 
-// NEW: Unified CRUD Operations (NS-121)
+// Unified CRUD Operations
 export { NodeCRUDManager, NodeFactory as CRUDNodeFactory } from './crudOperations';
 export type { CrudOperationResult, MoveOperationResult } from './crudOperations';

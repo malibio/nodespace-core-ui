@@ -23,6 +23,6 @@ export * from './types/chat';
 // Export the main component interface
 export type { NodeSpaceEditorProps, NodeSpaceEditorRef } from './NodeSpaceEditor';
 
-// Export unified CRUD operations (NS-121)
+// Export unified CRUD operations
 export { NodeCRUDManager, NodeFactory } from './utils/crudOperations';
 export type { CrudOperationResult, MoveOperationResult } from './utils/crudOperations';

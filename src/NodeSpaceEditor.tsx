@@ -17,20 +17,18 @@ export interface NodeSpaceEditorProps {
   // Support for collapsed state restoration
   initialCollapsedNodes?: Set<string>;
 
-  // NEW: Persistence configuration
+  // Persistence configuration
   persistenceConfig?: CollapsePersistenceConfig;
 
-  // NEW: Loading state management
+  // Loading state management
   isLoadingCollapsedState?: boolean;
   onCollapsedStateLoaded?: () => void;
 
-  // NEW: Unified CRUD Operations (NS-121)
+  // Unified CRUD Operations
   enableUnifiedCRUD?: boolean;
 
-  // NEW: Virtual Node Management (NS-117)
+  // Virtual Node Management
   enableVirtualNodes?: boolean;
-
-  // Keep other existing props...
   onFocus?: (nodeId: string) => void;
   onBlur?: () => void;
   onRemoveNode?: (node: BaseNode) => void;
@@ -39,7 +37,7 @@ export interface NodeSpaceEditorProps {
 }
 
 /**
- * Unified CRUD Operations Interface (NS-121)
+ * Unified CRUD Operations Interface
  * Exposed through ref for programmatic access
  */
 export interface NodeSpaceEditorRef {
@@ -73,7 +71,7 @@ export interface NodeSpaceEditorRef {
  * It provides a complete hierarchical block editor with keyboard navigation,
  * collapsible nodes, and advanced editing features.
  * 
- * NEW: Supports unified CRUD operations (NS-121) through ref interface
+ * Supports unified CRUD operations through ref interface
  */
 const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProps>(({
   nodes,
@@ -127,7 +125,6 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
     
     // Development warning for excessive callback changes
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 Core-UI: Callbacks updated, debounce state preserved');
     }
   }, [callbacks, contentPersistenceManager]);
 
@@ -154,7 +151,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
     }
   }, [isPersistenceLoading, onCollapsedStateLoaded]);
 
-  // NEW: Unified CRUD Manager (NS-121)
+  // Unified CRUD Manager
   const crudManager = useMemo(() => {
     if (enableUnifiedCRUD) {
       return new NodeCRUDManager(displayNodes, callbacks);
@@ -162,7 +159,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
     return null;
   }, [displayNodes, callbacks, enableUnifiedCRUD]);
 
-  // NEW: Virtual Node Manager (NS-117)
+  // Virtual Node Manager
   const virtualNodeManager = useMemo(() => {
     if (enableVirtualNodes) {
       const handleTreeUpdate = (updatedNodes: BaseNode[]) => {
@@ -191,7 +188,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
     };
   }, [virtualNodeManager]);
 
-  // Expose unified CRUD operations through ref (NS-121)
+  // Expose unified CRUD operations through ref
   React.useImperativeHandle(ref, () => ({
     // Create Pattern
     createNode: async (nodeType: string, content?: string, parentId?: string, afterSiblingId?: string) => {

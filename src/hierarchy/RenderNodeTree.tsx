@@ -18,8 +18,8 @@ interface RenderNodeTreeProps {
   collapsibleNodeTypes: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
-  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
-  contentPersistenceManager?: ContentPersistenceManager; // NEW: Content-based persistence
+  virtualNodeManager?: VirtualNodeManager; // Virtual node conversion support
+  contentPersistenceManager?: ContentPersistenceManager; // Content-based persistence
 }
 
 export function RenderNodeTree(props: RenderNodeTreeProps) {
@@ -35,21 +35,7 @@ export function RenderNodeTree(props: RenderNodeTreeProps) {
   // Only render root nodes (nodes without parents) to avoid duplicates
   const rootNodes = nodes.filter(node => !node.parent);
   
-  console.log('🎨 RENDER DEBUG: Total nodes received:', nodes.length);
-  console.log('🎨 RENDER DEBUG: All nodes:', nodes.map(n => ({ 
-    id: n.getNodeId().slice(-8), 
-    content: `"${n.getContent()}"`, 
-    hasParent: !!n.parent,
-    parentId: n.parent?.getNodeId().slice(-8),
-    childrenCount: n.children.length 
-  })));
-  console.log('🎨 RENDER DEBUG: Root nodes to render:', rootNodes.length);
-  console.log('🎨 RENDER DEBUG: Root nodes:', rootNodes.map(n => ({ 
-    id: n.getNodeId().slice(-8), 
-    content: `"${n.getContent()}"`,
-    childrenCount: n.children.length,
-    children: n.children.map(c => ({ id: c.getNodeId().slice(-8), content: `"${c.getContent()}"` }))
-  })));
+  // Debug rendering removed for cleaner console output
   
   return (
     <div className="ns-nodes-container">

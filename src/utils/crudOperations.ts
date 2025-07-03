@@ -1,9 +1,10 @@
-import { BaseNode, TextNode, TaskNode, ImageNode, DateNode, EntityNode, ImageMetadata, DateFormat } from '../nodes';
+import { BaseNode, TextNode, TaskNode, ImageNode, DateNode, EntityNode, AIChatNode, ImageMetadata, DateFormat } from '../nodes';
 import { NodeSpaceCallbacks } from '../types';
 import { findNodeById } from './nodeUtils';
+import { getBeforeSiblingId } from './hierarchyUtils';
 
 /**
- * Unified CRUD Operations Manager (NS-121)
+ * Unified CRUD Operations Manager
  * 
  * Provides consistent operation patterns for all node manipulation:
  * Create, Read, Update, Delete, Move, Reorder
@@ -24,6 +25,10 @@ export class NodeFactory {
 
   static createTaskNode(content: string = '', nodeId?: string): TaskNode {
     return new TaskNode(content, nodeId);
+  }
+
+  static createAIChatNode(content: string = '', nodeId?: string): AIChatNode {
+    return new AIChatNode(content, nodeId);
   }
 
   static createImageNode(imageData?: Uint8Array, metadata: ImageMetadata = {}, description?: string, nodeId?: string): ImageNode {
@@ -47,6 +52,8 @@ export class NodeFactory {
         return NodeFactory.createTextNode(content, nodeId);
       case 'task':
         return NodeFactory.createTaskNode(content, nodeId);
+      case 'ai-chat':
+        return NodeFactory.createAIChatNode(content, nodeId);
       case 'image':
         return NodeFactory.createImageNode(
           additionalProps?.imageData,
@@ -103,7 +110,7 @@ export class NodeCRUDManager {
   }
 
   /**
-   * Create Pattern - Fire-and-forget node creation (NS-124)
+   * Create Pattern - Fire-and-forget node creation
    */
   async createNode(
     nodeType: string,
@@ -197,7 +204,13 @@ export class NodeCRUDManager {
 
       // Fire callbacks
       if (this.callbacks.onNodeUpdate) {
-        this.callbacks.onNodeUpdate(updatedNode);
+        this.callbacks.onNodeUpdate(nodeId, {
+          content: updatedNode.getContent(),
+          parentId: updatedNode.parent?.getNodeId(),
+          beforeSiblingId: getBeforeSiblingId(updatedNode),
+          nodeType: updatedNode.getNodeType(),
+          metadata: updatedNode.getNodeType() === 'text' ? null : updatedNode.getDefaultProperties()
+        });
       }
       
       if (this.callbacks.onNodeChange) {

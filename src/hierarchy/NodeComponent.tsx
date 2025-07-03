@@ -21,8 +21,8 @@ interface NodeComponentProps {
   collapsibleNodeTypes: Set<string>;
   onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
-  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
-  contentPersistenceManager?: ContentPersistenceManager; // NEW: Content-based persistence
+  virtualNodeManager?: VirtualNodeManager; // Virtual node conversion support
+  contentPersistenceManager?: ContentPersistenceManager; // Content-based persistence
 }
 
 export function NodeComponent({
@@ -50,13 +50,7 @@ export function NodeComponent({
   const isCollapsed = collapsedNodes.has(nodeId);
   const isCollapsible = collapsibleNodeTypes.has(node.getNodeType());
   
-  // Debug hierarchy rendering
-  if (depth === 0) {
-    console.log(`🎨 NODE RENDER: Root node "${node.getContent()}" (${nodeId.slice(-8)})`);
-    console.log(`🎨 NODE RENDER: Has ${node.children.length} children`);
-    console.log(`🎨 NODE RENDER: Is collapsed: ${isCollapsed}`);
-    console.log(`🎨 NODE RENDER: Children:`, node.children.map(c => `"${c.getContent()}" (${c.getNodeId().slice(-8)})`));
-  }
+  // Debug hierarchy rendering removed for cleaner console output
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

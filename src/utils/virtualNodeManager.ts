@@ -9,7 +9,7 @@ export interface VirtualNodeConversion {
 }
 
 /**
- * Virtual Node Manager (NS-117)
+ * Virtual Node Manager
  * 
  * Manages the conversion of virtual nodes (with temporary IDs) to real nodes
  * after a debounce period. This moves debounce logic from desktop-app to core-ui.

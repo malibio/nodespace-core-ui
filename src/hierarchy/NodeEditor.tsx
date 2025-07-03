@@ -9,6 +9,7 @@ import type { KeyboardResult } from '../utils';
 import type { ImageUploadResult, NodeSpaceCallbacks } from '../types';
 import { VirtualNodeManager } from '../utils/virtualNodeManager';
 import { ContentPersistenceManager } from '../utils/contentPersistence';
+import { getHierarchyContext, getNodeType } from '../utils/hierarchyUtils';
 
 interface NodeEditorProps {
   node: BaseNode;
@@ -26,8 +27,8 @@ interface NodeEditorProps {
   // Additional props for ID synchronization
   focusedNodeId: string | null;
   onFocusedNodeIdChange: (nodeId: string | null) => void;
-  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117
-  contentPersistenceManager?: ContentPersistenceManager; // NEW: Content-based persistence
+  virtualNodeManager?: VirtualNodeManager; // Virtual node conversion support
+  contentPersistenceManager?: ContentPersistenceManager; // Content-based persistence
 }
 
 // Helper function to calculate node depth in hierarchy
@@ -177,7 +178,8 @@ export function NodeEditor({
 
         // Show loading state by updating node content
         node.setContent('📸 Loading image...');
-        callbacks.onNodesChange?.([...nodes]);
+        // TEMPORARILY DISABLED - Don't trigger node creation events for slash commands
+        // callbacks.onNodesChange?.([...nodes]);
 
         let imageData: ImageUploadResult | undefined;
 
@@ -229,7 +231,25 @@ export function NodeEditor({
             }
           }
           
-          callbacks.onNodesChange?.(updatedNodes);
+          // Update parent component state with new nodes array
+          if (callbacks.onNodesChange) {
+            callbacks.onNodesChange(updatedNodes);
+          }
+          
+          // Use onNodeUpdate to indicate this is a node transformation, not creation
+          if (callbacks.onNodeUpdate) {
+            const hierarchyContext = getHierarchyContext(imageNode);
+            callbacks.onNodeUpdate(imageNode.getNodeId(), {
+              content: imageNode.getContent(),
+              parentId: hierarchyContext.parentId,
+              beforeSiblingId: hierarchyContext.beforeSiblingId,
+              nodeType: getNodeType(imageNode),
+              metadata: { 
+                imageData: imageNode.getImageData(),
+                metadata: imageNode.getMetadata()
+              }
+            });
+          }
           
           // Focus the new node after creation
           setTimeout(() => {
@@ -244,12 +264,14 @@ export function NodeEditor({
         // Handle error gracefully
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         node.setContent(`❌ Image upload failed: ${errorMessage}`);
-        callbacks.onNodesChange?.([...nodes]);
+        // TEMPORARILY DISABLED - Don't trigger node creation events for slash commands
+        // callbacks.onNodesChange?.([...nodes]);
         
         // Show error for a few seconds, then restore original content
         setTimeout(() => {
           node.setContent(newContent);
-          callbacks.onNodesChange?.([...nodes]);
+          // TEMPORARILY DISABLED - Don't trigger node creation events for slash commands
+          // callbacks.onNodesChange?.([...nodes]);
         }, 3000);
         
         console.error('Image upload failed:', error);
@@ -257,6 +279,7 @@ export function NodeEditor({
     }
     // Handle other node types with existing logic
     else if (option.nodeType !== node.getNodeType()) {
+      // Handle all node types normally, including AIChatNode
       const newNode = NodeFactory.createNodeByType(option.nodeType, newContent);
       
       // Copy tree structure relationships
@@ -284,7 +307,38 @@ export function NodeEditor({
         }
       }
       
-      callbacks.onNodesChange?.(updatedNodes);
+      // Update parent component state with new nodes array
+      if (callbacks.onNodesChange) {
+        callbacks.onNodesChange(updatedNodes);
+      }
+      
+      // Use onNodeUpdate to indicate this is a node transformation, not creation
+      if (callbacks.onNodeUpdate) {
+        const hierarchyContext = getHierarchyContext(newNode);
+        
+        // Set appropriate metadata based on node type
+        let metadata = null;
+        if (newNode.getNodeType() === 'ai-chat') {
+          metadata = {
+            question: '',
+            question_timestamp: new Date().toISOString(),
+            response: null,
+            response_timestamp: null,
+            generation_time_ms: null,
+            overall_confidence: null,
+            node_sources: [],
+            error: null
+          };
+        }
+        
+        callbacks.onNodeUpdate(newNode.getNodeId(), {
+          content: newNode.getContent(),
+          parentId: hierarchyContext.parentId,
+          beforeSiblingId: hierarchyContext.beforeSiblingId,
+          nodeType: getNodeType(newNode),
+          metadata
+        });
+      }
       
       // Focus the new node after conversion
       setTimeout(() => {
@@ -296,7 +350,16 @@ export function NodeEditor({
       }, 0);
     } else {
       // Same node type, just update content
-      callbacks.onNodeChange?.(nodeId, newContent);
+      if (callbacks.onNodeUpdate) {
+        const hierarchyContext = getHierarchyContext(node);
+        callbacks.onNodeUpdate(nodeId, {
+          content: newContent,
+          parentId: hierarchyContext.parentId,
+          beforeSiblingId: hierarchyContext.beforeSiblingId,
+          nodeType: getNodeType(node),
+          metadata: null
+        });
+      }
     }
     
     setShowSlashModal(false);
@@ -341,8 +404,8 @@ export function NodeEditor({
       textareaRefs,
       callbacks,
       collapsedNodes,
-      virtualNodeManager, // NEW: For NS-117
-      contentPersistenceManager // NEW: Content-based persistence
+      virtualNodeManager, // Virtual node conversion support
+      contentPersistenceManager // Content-based persistence
     };
     
     let result: KeyboardResult = { handled: false };
@@ -442,7 +505,7 @@ export function NodeEditor({
         callbacks.onNodesChange?.(result.newNodes);
       }
       
-      // NOTE: Async ID synchronization removed in NS-124 - UUIDs generated upfront, no swapping needed
+      // UUIDs generated upfront, no swapping needed
 
       // Apply focus changes immediately after DOM updates
       if (result.focusNodeId) {
@@ -519,6 +582,7 @@ export function NodeEditor({
         onFocus={onFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
+        callbacks={callbacks}
         onContentChange={(content) => {
           // Always update local state immediately for responsive UI
           callbacks.onNodesChange?.([...nodes]); // Ensure re-render for content changes
@@ -526,12 +590,21 @@ export function NodeEditor({
           // Reset preferred column when user types (changes content)
           resetNavigationState();
           
-          // Debounce the semantic onNodeChange callback
+          // Debounce the semantic onNodeUpdate callback
           if (contentChangeTimeoutRef.current) {
             clearTimeout(contentChangeTimeoutRef.current);
           }
           contentChangeTimeoutRef.current = setTimeout(() => {
-            callbacks.onNodeChange?.(nodeId, content);
+            if (callbacks.onNodeUpdate) {
+              const hierarchyContext = getHierarchyContext(node);
+              callbacks.onNodeUpdate(nodeId, {
+                content,
+                parentId: hierarchyContext.parentId,
+                beforeSiblingId: hierarchyContext.beforeSiblingId,
+                nodeType: getNodeType(node),
+                metadata: null
+              });
+            }
           }, 300); // 300ms debounce delay
           
           // Schedule content persistence (only for nodes with actual content)

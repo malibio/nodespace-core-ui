@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Generate a safe UUID with fallback error handling (NS-124)
+ * Generate a safe UUID with fallback error handling
  */
 function generateSafeNodeId(): string {
   try {

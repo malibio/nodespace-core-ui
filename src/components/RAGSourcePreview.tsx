@@ -12,7 +12,7 @@ interface RAGSourcePreviewProps {
 
 /**
  * Component for displaying RAG knowledge sources with preview tooltips
- * Implements NS-59 requirements for source attribution and knowledge previews
+ * Provides source attribution and knowledge previews for AI chat responses
  */
 export function RAGSourcePreview({ 
   source, 

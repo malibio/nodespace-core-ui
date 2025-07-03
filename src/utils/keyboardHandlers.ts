@@ -13,8 +13,8 @@ export interface EditContext {
   textareaRefs: React.MutableRefObject<{ [key: string]: HTMLTextAreaElement | null }>;
   callbacks: NodeSpaceCallbacks;
   collapsedNodes?: Set<string>;
-  virtualNodeManager?: VirtualNodeManager; // NEW: For NS-117 virtual node conversion
-  contentPersistenceManager?: ContentPersistenceManager; // NEW: Content-based persistence
+  virtualNodeManager?: VirtualNodeManager; // Virtual node conversion support
+  contentPersistenceManager?: ContentPersistenceManager; // Content-based persistence
 }
 
 /**
@@ -26,7 +26,7 @@ export interface KeyboardResult {
   focusNodeId?: string;
   cursorPosition?: number;
   preventDefault?: boolean;
-  // NOTE: asyncOperation removed in NS-124 - UUIDs generated upfront, no ID swapping needed
+  // UUIDs generated upfront, no ID swapping needed
 }
 
 /**
