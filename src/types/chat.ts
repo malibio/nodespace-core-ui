@@ -1,5 +1,4 @@
 // TypeScript interfaces for RAG-enhanced AIChatNode functionality
-// As defined in Linear task NS-64
 
 // Basic node identifier type
 export type NodeId = string;

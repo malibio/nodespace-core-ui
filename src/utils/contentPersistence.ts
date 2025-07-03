@@ -1,6 +1,6 @@
 /**
  * Content-based persistence manager
- * Triggers onNodeCreateWithId for all nodes, including empty ones
+ * Triggers onNodeUpdate for all nodes, including empty ones
  */
 
 import { NodeSpaceCallbacks } from '../types';
@@ -10,6 +10,8 @@ export interface PendingNodeCreation {
   content: string;
   parentId?: string;
   nodeType: string;
+  beforeSiblingId?: string;
+  metadata?: any;
   timestamp: number;
 }
 
@@ -48,7 +50,9 @@ export class ContentPersistenceManager {
     nodeId: string,
     content: string,
     parentId?: string,
-    nodeType: string = 'text'
+    nodeType: string = 'text',
+    beforeSiblingId?: string,
+    metadata?: any
   ): void {
     // If node already persisted, don't persist again
     if (this.persistedNodes.has(nodeId)) {
@@ -72,6 +76,8 @@ export class ContentPersistenceManager {
       content,
       parentId,
       nodeType,
+      beforeSiblingId,
+      metadata,
       timestamp: Date.now()
     });
 
@@ -90,7 +96,9 @@ export class ContentPersistenceManager {
     nodeId: string,
     content: string,
     parentId?: string,
-    nodeType: string = 'text'
+    nodeType: string = 'text',
+    beforeSiblingId?: string,
+    metadata?: any
   ): void {
     // If node already persisted, don't persist again
     if (this.persistedNodes.has(nodeId)) {
@@ -115,6 +123,8 @@ export class ContentPersistenceManager {
       content,
       parentId,
       nodeType,
+      beforeSiblingId,
+      metadata,
       timestamp: Date.now()
     });
 
@@ -138,25 +148,17 @@ export class ContentPersistenceManager {
     this.debounceTimeouts.delete(nodeId);
 
     // Call the backend
-    if (this.callbacks.onNodeCreateWithId) {
+    if (this.callbacks.onNodeUpdate) {
       try {
-        const result = this.callbacks.onNodeCreateWithId(
-          pending.nodeId,
-          pending.content,
-          pending.parentId,
-          pending.nodeType
-        );
-
-        // Handle async callback
-        if (result instanceof Promise) {
-          result.catch(error => {
-            console.warn('Node creation persistence failed:', error);
-            // Remove from persisted set so it can be retried
-            this.persistedNodes.delete(nodeId);
-          });
-        }
+        this.callbacks.onNodeUpdate(pending.nodeId, {
+          content: pending.content,
+          parentId: pending.parentId,
+          beforeSiblingId: pending.beforeSiblingId,
+          nodeType: pending.nodeType,
+          metadata: pending.metadata
+        });
       } catch (error) {
-        console.warn('Node creation persistence failed:', error);
+        console.warn('Node update persistence failed:', error);
         // Remove from persisted set so it can be retried
         this.persistedNodes.delete(nodeId);
       }

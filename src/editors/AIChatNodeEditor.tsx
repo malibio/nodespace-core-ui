@@ -2,8 +2,9 @@ import React, { useState, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { NodeEditorProps } from './TextNodeEditor';
 import { AIChatNode } from '../nodes';
-import { ChatMessage } from '../types/chat';
+import { ChatMessage, RAGQueryRequest, MessageRole } from '../types/chat';
 import { RAGSourcePreview } from '../components/RAGSourcePreview';
+import { getHierarchyContext, getNodeType } from '../utils/hierarchyUtils';
 
 /**
  * Editor component specifically for AI chat nodes
@@ -17,7 +18,8 @@ export function AIChatNodeEditor({
   onBlur,
   onKeyDown,
   onContentChange,
-  onClick
+  onClick,
+  callbacks
 }: NodeEditorProps) {
   // Cast to AIChatNode for type safety
   const chatNode = node as AIChatNode;
@@ -27,11 +29,45 @@ export function AIChatNodeEditor({
   const [currentAssistantMessage, setCurrentAssistantMessage] = useState<ChatMessage | null>(null);
   const triggerUpdate = useCallback(() => forceUpdate({}), []);
 
+  // Determine if node should be saved to backend
+  const shouldSaveNode = useCallback((chatNode: AIChatNode): boolean => {
+    const title = chatNode.getTitle();
+    const question = chatNode.getQuestion();
+    
+    // Save when: title changed from default OR user typed in chat
+    return title !== 'Unnamed Chat' || question.trim().length > 0;
+  }, []);
+
   // Handle title/name changes
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newTitle = e.target.value;
     chatNode.setTitle(newTitle);
-    onContentChange(newTitle); // Title changes are the main content
+    
+    // Use onNodeUpdate with complete node state
+    if (shouldSaveNode(chatNode)) {
+      if (callbacks?.onNodeUpdate) {
+        const hierarchyContext = getHierarchyContext(chatNode);
+        const metadata = {
+          question: chatNode.getQuestion(),
+          question_timestamp: new Date().toISOString(),
+          response: null,
+          response_timestamp: null,
+          generation_time_ms: null,
+          overall_confidence: null,
+          node_sources: [],
+          error: null
+        };
+        
+        callbacks.onNodeUpdate(nodeId, {
+          content: newTitle,
+          parentId: hierarchyContext.parentId,
+          beforeSiblingId: hierarchyContext.beforeSiblingId,
+          nodeType: getNodeType(chatNode),
+          metadata
+        });
+      }
+    }
+    
     triggerUpdate();
   };
 
@@ -39,29 +75,190 @@ export function AIChatNodeEditor({
   const handleQuestionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newQuestion = e.target.value;
     chatNode.setQuestion(newQuestion);
-    // Don't call onContentChange for question - it's separate from main content
+    
+    // When user types in query box, save the node with metadata
+    if (newQuestion.trim() || shouldSaveNode(chatNode)) {
+      if (callbacks?.onNodeUpdate) {
+        const hierarchyContext = getHierarchyContext(chatNode);
+        const chatName = chatNode.getTitle();
+        const metadata = {
+          question: newQuestion,
+          question_timestamp: new Date().toISOString(),
+          response: chatNode.getResponse() || null,
+          response_timestamp: chatNode.getResponse() ? new Date().toISOString() : null,
+          generation_time_ms: null,
+          overall_confidence: null,
+          node_sources: chatNode.getSources().map(source => ({
+            node_id: source.nodeId,
+            content: source.title, // Will be full content in real implementation
+            retrieval_score: 0.0,
+            context_tokens: 0,
+            node_type: source.type,
+            last_modified: new Date().toISOString()
+          })),
+          error: chatNode.getError()
+        };
+        
+        callbacks.onNodeUpdate(nodeId, {
+          content: chatName,
+          parentId: hierarchyContext.parentId,
+          beforeSiblingId: hierarchyContext.beforeSiblingId,
+          nodeType: getNodeType(chatNode),
+          metadata
+        });
+      }
+    }
+    
     triggerUpdate();
   };
 
-  // Handle Ask button click
+  // Handle Ask button click - Now integrates with backend via callbacks
   const handleAsk = async () => {
     if (!chatNode.getQuestion().trim()) return;
     
-    // Add user message to session
+    // Create user message
     const userMessage = chatNode.createUserMessage();
     chatNode.addMessage(userMessage);
     
-    triggerUpdate(); // Update UI to show loading
+    // Fire onAIChatMessageSent callback
+    if (callbacks?.onAIChatMessageSent) {
+      callbacks.onAIChatMessageSent(userMessage, nodeId);
+    }
+    
+    // Set loading state
+    chatNode.setLoadingState('processing' as any);
+    
+    // Update metadata to indicate question has been sent
+    if (callbacks?.onNodeUpdate) {
+      const hierarchyContext = getHierarchyContext(chatNode);
+      const chatName = chatNode.getTitle();
+      const metadata = {
+        question: chatNode.getQuestion(),
+        question_timestamp: new Date().toISOString(),
+        response: null,
+        response_timestamp: null,
+        generation_time_ms: null,
+        overall_confidence: null,
+        node_sources: [],
+        error: null
+      };
+      
+      callbacks.onNodeUpdate(nodeId, {
+        content: chatName,
+        parentId: hierarchyContext.parentId,
+        beforeSiblingId: hierarchyContext.beforeSiblingId,
+        nodeType: getNodeType(chatNode),
+        metadata
+      });
+    }
+    
+    triggerUpdate();
+    
     try {
-      // Use enhanced RAG functionality instead of legacy simulateAIResponse
-      const assistantMessage = await chatNode.simulateRAGResponse();
-      chatNode.addMessage(assistantMessage);
-      setCurrentAssistantMessage(assistantMessage);
+      // Check if we have AI chat query callback - use it instead of simulation
+      if (callbacks?.onAIChatQuery) {
+        // Create RAG query request
+        const ragRequest: RAGQueryRequest = {
+          query: chatNode.getQuestion(),
+          session_id: chatNode.getSession()?.id || `session_${nodeId}`,
+          conversation_history: chatNode.getMessages(),
+          options: {
+            max_retrieval_results: 5,
+            relevance_threshold: 0.7,
+            include_sources: true,
+            context_window_size: 2000
+          }
+        };
+        
+        // Execute real AI query through callback
+        const ragResponse = await callbacks.onAIChatQuery(ragRequest);
+        
+        // Create assistant message from response
+        const assistantMessage: ChatMessage = {
+          id: ragResponse.message_id,
+          session_id: ragRequest.session_id,
+          content: ragResponse.content,
+          role: MessageRole.Assistant,
+          timestamp: new Date(),
+          sequence_number: chatNode.getMessages().length + 1,
+          rag_context: ragResponse.rag_context
+        };
+        
+        // Update node with response
+        chatNode.setResponse(ragResponse.content);
+        chatNode.addMessage(assistantMessage);
+        setCurrentAssistantMessage(assistantMessage);
+        
+        // Update sources from RAG context
+        if (ragResponse.rag_context?.sources_used) {
+          const sources = ragResponse.rag_context.sources_used.map(sourceId => ({
+            nodeId: sourceId,
+            title: `Knowledge Source ${sourceId}`,
+            type: 'text'
+          }));
+          chatNode.setSources(sources);
+        }
+        
+        // Fire onAIChatResponseReceived callback
+        if (callbacks?.onAIChatResponseReceived) {
+          callbacks.onAIChatResponseReceived(ragResponse, nodeId);
+        }
+        
+        // Update node state with complete context including messages and RAG context
+        if (callbacks?.onNodeUpdate) {
+          const hierarchyContext = getHierarchyContext(chatNode);
+          const chatName = chatNode.getTitle();
+          const metadata = {
+            question: chatNode.getQuestion(),
+            question_timestamp: new Date().toISOString(),
+            response: ragResponse.content,
+            response_timestamp: new Date().toISOString(),
+            generation_time_ms: ragResponse.rag_context?.generation_time_ms || null,
+            overall_confidence: ragResponse.rag_context?.retrieval_score || null,
+            node_sources: ragResponse.rag_context?.sources_used?.map(sourceId => ({
+              node_id: sourceId,
+              content: `Knowledge Source ${sourceId}`, // Will be full content in real implementation
+              retrieval_score: ragResponse.rag_context?.retrieval_score || 0.0,
+              context_tokens: ragResponse.rag_context?.context_tokens || 0,
+              node_type: 'text',
+              last_modified: new Date().toISOString()
+            })) || [],
+            error: null
+          };
+          
+          callbacks.onNodeUpdate(nodeId, {
+            content: chatName,
+            parentId: hierarchyContext.parentId,
+            beforeSiblingId: hierarchyContext.beforeSiblingId,
+            nodeType: getNodeType(chatNode),
+            metadata
+          });
+        }
+        
+        chatNode.setLoadingState('idle' as any);
+        
+      } else {
+        // Fallback to simulation if no callback provided (for demo/development)
+        console.warn('No onAIChatQuery callback provided, using simulation');
+        const assistantMessage = await chatNode.simulateRAGResponse();
+        chatNode.addMessage(assistantMessage);
+        setCurrentAssistantMessage(assistantMessage);
+      }
+      
     } catch (error) {
       console.error('Failed to get AI response:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
+      chatNode.setError(errorMessage);
+      chatNode.setLoadingState('error' as any);
       setCurrentAssistantMessage(null);
+      
+      // Fire onAIChatError callback
+      if (callbacks?.onAIChatError) {
+        callbacks.onAIChatError(errorMessage, nodeId);
+      }
     }
-    triggerUpdate(); // Update UI with response
+    
+    triggerUpdate();
   };
 
   // Handle Clear button click
@@ -71,7 +268,31 @@ export function AIChatNodeEditor({
     chatNode.setError(null);
     chatNode.setSources([]);
     setCurrentAssistantMessage(null);
-    onContentChange('');
+    
+    // Update backend state after clearing
+    if (callbacks?.onNodeUpdate && shouldSaveNode(chatNode)) {
+      const hierarchyContext = getHierarchyContext(chatNode);
+      const chatName = chatNode.getTitle();
+      const metadata = {
+        question: '',
+        question_timestamp: new Date().toISOString(),
+        response: null,
+        response_timestamp: null,
+        generation_time_ms: null,
+        overall_confidence: null,
+        node_sources: [],
+        error: null
+      };
+      
+      callbacks.onNodeUpdate(nodeId, {
+        content: chatName,
+        parentId: hierarchyContext.parentId,
+        beforeSiblingId: hierarchyContext.beforeSiblingId,
+        nodeType: getNodeType(chatNode),
+        metadata
+      });
+    }
+    
     triggerUpdate();
   };
 

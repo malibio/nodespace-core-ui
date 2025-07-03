@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BaseNode } from '../nodes';
 import NodeSpaceEditor from '../NodeSpaceEditor';
 import { NodeSpaceCallbacks } from '../hierarchy';
+import { RAGQueryRequest, RAGQueryResponse, ChatMessage, RAGResponseStatus } from '../types/chat';
 import './demo.css';
 
 function DemoApp() {
@@ -20,16 +21,44 @@ function DemoApp() {
 
   // Callback handlers with logging
   const callbacks: NodeSpaceCallbacks = {
-    onNodeCreateWithId: (nodeId: string, content: string, parentId?: string, nodeType?: string) => {
-      addLog(`🟢 CREATE: ${nodeType} node "${content}" (ID: ${nodeId.slice(0, 8)}...) ${parentId ? `Parent: ${parentId.slice(0, 8)}...` : 'ROOT'}`);
-    },
-    
-    onNodeChange: (nodeId: string, content: string) => {
-      addLog(`🟡 CHANGE: Node ${nodeId.slice(0, 8)}... content: "${content}"`);
-    },
-    
-    onNodeDelete: (nodeId: string) => {
-      addLog(`🔴 DELETE: Node ${nodeId.slice(0, 8)}...`);
+    // Single unified callback for all node updates
+    onNodeUpdate: (nodeId: string, nodeData: any) => {
+      const { content, parentId, beforeSiblingId, nodeType, metadata } = nodeData;
+      
+      let logMessage = `🔄 UPDATE: ${nodeType} node "${content}" (ID: ${nodeId.slice(0, 8)}...)`;
+      
+      if (parentId) {
+        logMessage += ` Parent: ${parentId.slice(0, 8)}...`;
+      } else {
+        logMessage += ' ROOT';
+      }
+      
+      if (beforeSiblingId) {
+        logMessage += ` After: ${beforeSiblingId.slice(0, 8)}...`;
+      }
+      
+      if (metadata) {
+        if (nodeType === 'ai-chat') {
+          const { question, response, node_sources } = metadata;
+          logMessage += ` Q: "${question}"`;
+          if (response) {
+            logMessage += ` Response: Yes`;
+          }
+          if (node_sources && node_sources.length > 0) {
+            logMessage += ` (${node_sources.length} sources)`;
+          }
+        } else {
+          logMessage += ` Metadata: ${Object.keys(metadata).join(', ')}`;
+        }
+      }
+      
+      addLog(logMessage);
+      
+      // In a real app, you'd persist the node data here
+      console.log('🔔 Node Update Event Received:', {
+        nodeId,
+        nodeData
+      });
     },
     
     onNodesChange: (updatedNodes: BaseNode[]) => {
@@ -45,18 +74,45 @@ function DemoApp() {
       console.log('🔄 DEMO: setNodes called, React will re-render');
     },
     
-    // NEW: Structure change callback for indentation/outdentation
-    onNodeStructureChange: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => {
-      const detailsStr = details ? JSON.stringify(details, null, 2) : 'No details';
-      addLog(`🏗️ STRUCTURE: ${operation.toUpperCase()} operation on node ${nodeId.slice(0, 8)}...`);
-      addLog(`📋 DETAILS: ${detailsStr}`);
+    onNodeDelete: (nodeId: string) => {
+      addLog(`🔴 DELETE: Node ${nodeId.slice(0, 8)}...`);
+    },
+
+    // NEW: AI Chat callbacks for testing RAG integration
+    onAIChatQuery: async (request: RAGQueryRequest): Promise<RAGQueryResponse> => {
+      addLog(`🤖 AI CHAT QUERY: "${request.query}" (Session: ${request.session_id.slice(0, 8)}...)`);
       
-      // In a real app, you'd persist the structure change here
-      console.log('🔔 Structure Change Event Received:', {
-        operation,
-        nodeId,
-        details
-      });
+      // Simulate AI processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create mock response based on query
+      const mockResponse: RAGQueryResponse = {
+        message_id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        content: `**AI Response to:** "${request.query}"\n\n✅ **This callback is working!** The desktop app would normally:\n- Send this query to the backend AI service\n- Retrieve relevant knowledge from your database\n- Generate a contextual response with source attribution\n\n**Mock Knowledge Sources Found:**\n- Demo Document 1: Project planning notes\n- Demo Document 2: Technical specifications\n- Demo Document 3: Meeting transcripts\n\n*Note: This is a demo response from the core-ui component callbacks.*`,
+        rag_context: {
+          sources_used: ['demo-doc-1', 'demo-doc-2', 'demo-doc-3'],
+          retrieval_score: 0.89,
+          context_tokens: 420,
+          generation_time_ms: 1850,
+          knowledge_summary: 'Found relevant information from 3 demo knowledge sources'
+        },
+        status: RAGResponseStatus.Success
+      };
+      
+      addLog(`✅ AI RESPONSE: Generated response with ${mockResponse.rag_context.sources_used.length} sources`);
+      return mockResponse;
+    },
+
+    onAIChatMessageSent: (message: ChatMessage, nodeId: string) => {
+      addLog(`📤 AI MESSAGE SENT: "${message.content}" (Node: ${nodeId.slice(0, 8)}...)`);
+    },
+
+    onAIChatResponseReceived: (response: RAGQueryResponse, nodeId: string) => {
+      addLog(`📥 AI RESPONSE RECEIVED: Status=${response.status}, Sources=${response.rag_context?.sources_used.length || 0} (Node: ${nodeId.slice(0, 8)}...)`);
+    },
+
+    onAIChatError: (error: string, nodeId: string) => {
+      addLog(`❌ AI CHAT ERROR: ${error} (Node: ${nodeId.slice(0, 8)}...)`);
     }
   };
 
@@ -68,20 +124,22 @@ function DemoApp() {
     <div className={`demo-app ${isDarkMode ? 'ns-dark-mode' : ''}`}>
       <div className="demo-header">
         <div className="demo-title-row">
-          <h1>NodeSpace Core UI - Indentation & Structure Change Demo</h1>
+          <h1>NodeSpace Core UI - Full Feature Demo</h1>
           <button onClick={() => setIsDarkMode(!isDarkMode)} className="theme-toggle">
             {isDarkMode ? '☀️' : '🌙'}
           </button>
         </div>
-        <p>Test the hierarchical editing features. Watch the logs to see structure change events!</p>
+        <p>Test all NodeSpace features including AI chat integration. Watch the logs to see all events!</p>
         <div className="demo-info">
           <strong>🎯 Key Features to Test:</strong>
           <ul>
-            <li><strong>Tab:</strong> Indent a node (makes it a child of previous sibling)</li>
-            <li><strong>Shift+Tab:</strong> Outdent a node (moves it up one level)</li>
+            <li><strong>Slash Commands:</strong> Type "/" to create AI chat, task, or other node types</li>
+            <li><strong>AI Chat:</strong> Create "/ai" nodes and click "Ask" to test RAG callbacks</li>
+            <li><strong>Tab/Shift+Tab:</strong> Indent/outdent nodes for hierarchical structure</li>
             <li><strong>Enter:</strong> Create new sibling nodes</li>
-            <li><strong>Structure Events:</strong> Watch for STRUCTURE log entries with full details</li>
-            <li><strong>Visual Hierarchy:</strong> See indented nodes with connecting lines</li>
+            <li><strong>Keyboard Navigation:</strong> Arrow keys for cross-node navigation</li>
+            <li><strong>Single Callback:</strong> All node updates now use onNodeUpdate with complete context</li>
+            <li><strong>Event Logging:</strong> Watch for unified update events with hierarchy info</li>
           </ul>
         </div>
       </div>
@@ -117,13 +175,14 @@ function DemoApp() {
 
       <div className="demo-footer">
         <p>
-          <strong>🧪 Test Indentation Steps:</strong>
+          <strong>🧪 Test Single Callback Steps:</strong>
         </p>
         <ol>
           <li><strong>Create nodes:</strong> Type "Parent" → Enter → Type "Child"</li>
           <li><strong>Test Tab:</strong> Put cursor on "Child" → Press Tab (should indent)</li>
-          <li><strong>Check logs:</strong> Look for "🏗️ STRUCTURE: INDENT" with detailed JSON</li>
-          <li><strong>Test Shift+Tab:</strong> Press Shift+Tab (should outdent)</li>
+          <li><strong>Check logs:</strong> Look for "🔄 UPDATE" with Parent and hierarchy info</li>
+          <li><strong>Test AI Chat:</strong> Type "/ai" → Enter question → Click Ask</li>
+          <li><strong>Watch metadata:</strong> See complete AI chat state in update logs</li>
           <li><strong>Visual feedback:</strong> Watch hierarchy lines appear/disappear</li>
         </ol>
       </div>

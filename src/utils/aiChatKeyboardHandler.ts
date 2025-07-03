@@ -1,6 +1,6 @@
 import { BaseNode } from '../nodes';
 import { EditContext, KeyboardResult, NodeKeyboardHandler } from './keyboardHandlers';
-import { indentNode, outdentNode, NodeFactory } from './nodeUtils';
+import { indentNode, NodeFactory } from './nodeUtils';
 
 /**
  * Keyboard handler for AIChatNode

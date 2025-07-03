@@ -33,7 +33,7 @@ export class AIChatNode extends BaseNode {
   private messages: ChatMessage[] = [];
   private loadingState: ChatLoadingState = ChatLoadingState.Idle;
 
-  constructor(content: string = '', nodeId?: string) {
+  constructor(content: string = 'Unnamed Chat', nodeId?: string) {
     super('ai-chat', content, nodeId);
     
     // Initialize legacy chat data for backward compatibility
@@ -49,7 +49,7 @@ export class AIChatNode extends BaseNode {
     this.enhancedData = {
       id: this.getNodeId(),
       session_id: null,
-      title: content || 'Untitled Chat',
+      title: content || 'Unnamed Chat',
       is_minimized: false,
       message_count: 0,
       date_time_created: new Date(),
@@ -174,7 +174,7 @@ export class AIChatNode extends BaseNode {
     return {
       id: this.getNodeId(),
       session_id: this.enhancedData.session_id || null,
-      title: this.enhancedData.title || 'Untitled Chat',
+      title: this.enhancedData.title || 'Unnamed Chat',
       is_minimized: this.enhancedData.is_minimized || false,
       last_message_at: this.messages.length > 0 ? this.messages[this.messages.length - 1].timestamp : undefined,
       message_count: this.messages.length,
@@ -394,12 +394,6 @@ export class AIChatNode extends BaseNode {
     return node;
   }
 
-  /**
-   * Override addChild to prevent AIChatNodes from having children
-   * AIChatNodes are leaf nodes and should not accept children
-   */
-  addChild(child: BaseNode): void {
-    console.warn('AIChatNode cannot have children. Ignoring addChild operation.');
-    // Do nothing - AIChatNodes are leaf nodes
-  }
+  // AIChatNode can now have children like other node types
+  // Removed the addChild override to allow normal hierarchical behavior
 }

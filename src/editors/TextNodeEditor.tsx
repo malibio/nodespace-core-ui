@@ -1,6 +1,7 @@
 import React from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { BaseNode } from '../nodes';
+import { NodeSpaceCallbacks } from '../types';
 
 /**
  * Props for node-specific editors
@@ -15,6 +16,7 @@ export interface NodeEditorProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onContentChange: (content: string) => void;
   onClick?: () => void;
+  callbacks?: NodeSpaceCallbacks;
 }
 
 /**

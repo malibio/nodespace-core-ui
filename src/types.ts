@@ -1,4 +1,5 @@
 import { BaseNode, ImageMetadata } from './nodes';
+import { RAGQueryRequest, RAGQueryResponse, ChatMessage } from './types/chat';
 
 export interface HierarchyContext {
   parentId?: string;
@@ -13,13 +14,36 @@ export interface ImageUploadResult {
 }
 
 export interface NodeSpaceCallbacks {
-  // Current semantic callbacks
+  // Single unified callback for all node updates
+  onNodeUpdate?: (nodeId: string, nodeData: {
+    content: string;              // Current content (for vector embedding)
+    parentId?: string;           // Current parent UUID (null for root nodes)
+    beforeSiblingId?: string;    // Sibling immediately before this node (null for first child)
+    nodeType: string;           // 'text', 'ai-chat', 'task', etc.
+    metadata?: any;             // Node-specific data (null for TextNode)
+  }) => void;
+
+  // RAG integration (unchanged)
+  onAIChatQuery?: (request: RAGQueryRequest) => Promise<RAGQueryResponse>;
+  onAIChatMessageSent?: (message: ChatMessage, nodeId: string) => void;
+  onAIChatResponseReceived?: (response: RAGQueryResponse, nodeId: string) => void;
+  onAIChatError?: (error: string, nodeId: string) => void;
+
+  // Node tree management (still needed for UI updates)
   onNodesChange?: (nodes: BaseNode[]) => void;
-  onNodeChange?: (nodeId: string, content: string) => void;
+
+  // Collapsed state management (unchanged)
+  onCollapseStateChange?: (nodeId: string, collapsed: boolean) => void;
+  onLoadCollapsedState?: () => Promise<Set<string>>;
+  onSaveCollapsedState?: (collapsedNodes: Set<string>) => Promise<void>;
+  onBatchCollapseChange?: (changes: Array<{nodeId: string, collapsed: boolean}>) => Promise<void>;
   
-  // Content-based node creation (only called when content has non-whitespace characters)
-  onNodeCreateWithId?: (nodeId: string, content: string, parentId?: string, nodeType?: string) => Promise<void> | void;
-  
+  // Image node callbacks (unchanged)
+  onImageNodeCreate?: (imageData: Uint8Array, metadata: ImageMetadata, parentId?: string) => Promise<string>;
+  onImageNodeSelect?: (nodeId: string) => void;
+  onImagePreview?: (nodeId: string) => void;
+
+  // Node deletion (unchanged)
   onNodeDelete?: (nodeId: string, deletionContext?: {
     type: 'empty_removal' | 'content_merge';
     parentId?: string;
@@ -29,30 +53,17 @@ export interface NodeSpaceCallbacks {
     siblingPosition: number;
     mergedIntoNode?: string;
   }) => void;
-  onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 
-  // Collapsed state management
-  onCollapseStateChange?: (nodeId: string, collapsed: boolean) => void;
-
-  // NEW: Async persistence callbacks
-  onLoadCollapsedState?: () => Promise<Set<string>>;
-  onSaveCollapsedState?: (collapsedNodes: Set<string>) => Promise<void>;
-
-  // NEW: Batch operations for performance
-  onBatchCollapseChange?: (changes: Array<{nodeId: string, collapsed: boolean}>) => Promise<void>;
-  
-  // NEW: Image node callbacks
-  onImageNodeCreate?: (imageData: Uint8Array, metadata: ImageMetadata, parentId?: string) => Promise<string>;
-  onImageNodeSelect?: (nodeId: string) => void;
-  onImagePreview?: (nodeId: string) => void;
-
-  // NEW: Unified CRUD Operations (NS-121)
-  // Move Pattern - Change parent
+  // DEPRECATED: Legacy callbacks kept for compatibility
+  // These will be removed once all files are migrated to onNodeUpdate
+  /** @deprecated Use onNodeUpdate instead */
+  onNodeCreateWithId?: (nodeId: string, content: string, parentId?: string, nodeType?: string, afterSiblingId?: string, metadata?: any) => Promise<void> | void;
+  /** @deprecated Use onNodeUpdate instead */
+  onNodeChange?: (nodeId: string, content: string, metadata?: any) => void;
+  /** @deprecated Use onNodeUpdate instead */
   onNodeMove?: (nodeId: string, newParentId?: string, afterSiblingId?: string) => void;
-  
-  // Reorder Pattern - Change sibling position  
+  /** @deprecated Use onNodeUpdate instead */
   onNodeReorder?: (nodeId: string, afterSiblingId?: string) => void;
-
-  // Update Pattern - Enhanced for node objects
-  onNodeUpdate?: (updatedNode: BaseNode) => void;
+  /** @deprecated Use onNodeUpdate instead */
+  onNodeStructureChange?: (operation: 'indent' | 'outdent' | 'move', nodeId: string, details?: any) => void;
 }
