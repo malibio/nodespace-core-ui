@@ -50,7 +50,6 @@ export function NodeComponent({
   const isCollapsed = collapsedNodes.has(nodeId);
   const isCollapsible = collapsibleNodeTypes.has(node.getNodeType());
   
-  // Debug hierarchy rendering removed for cleaner console output
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -99,7 +98,7 @@ export function NodeComponent({
           const lastIndicatorRect = lastChildIndicator.getBoundingClientRect();
           
           // Calculate vertical line height from start to last child indicator center
-          const lineStartY = 20.5;
+          const lineStartY = 12.5;
           const lastIndicatorCenterY = lastIndicatorRect.top - containerRect.top + (lastIndicatorRect.height / 2);
           const lineHeight = Math.max(0, lastIndicatorCenterY - lineStartY);
           
@@ -242,7 +241,7 @@ export function NodeComponent({
                 const containerRect = container.getBoundingClientRect();
                 const lastIndicatorRect = lastChildIndicator.getBoundingClientRect();
                 
-                const lineStartY = 20.5;
+                const lineStartY = 12.5;
                 const lastIndicatorCenterY = lastIndicatorRect.top - containerRect.top + (lastIndicatorRect.height / 2);
                 const lineHeight = Math.max(0, lastIndicatorCenterY - lineStartY);
                 

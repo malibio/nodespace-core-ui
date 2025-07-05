@@ -15,7 +15,7 @@ export class TaskNodeKeyboardHandler implements NodeKeyboardHandler {
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
     // For tasks, Enter could create a new task (instead of splitting content)
     // For now, use similar logic to text but could be customized
-    const { cursorPosition, content, callbacks } = context;
+    const { cursorPosition, content /* callbacks */ } = context;
     
     const leftContent = content.substring(0, cursorPosition);
     const rightContent = content.substring(cursorPosition);

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
+import ReactMarkdown from 'react-markdown';
 import { NodeEditorProps } from './TextNodeEditor';
 import { AIChatNode } from '../nodes';
 import { ChatMessage, RAGQueryRequest, MessageRole } from '../types/chat';
@@ -13,6 +14,7 @@ import { getHierarchyContext, getNodeType } from '../utils/hierarchyUtils';
 export function AIChatNodeEditor({
   node,
   nodeId,
+  focused,
   textareaRefs,
   onFocus,
   onBlur,
@@ -28,6 +30,10 @@ export function AIChatNodeEditor({
   const [, forceUpdate] = useState({});
   const [currentAssistantMessage, setCurrentAssistantMessage] = useState<ChatMessage | null>(null);
   const triggerUpdate = useCallback(() => forceUpdate({}), []);
+  
+  const title = chatNode.getTitle();
+  const hasTitle = title.trim().length > 0 && title !== 'Unnamed Chat';
+  const displayTitle = title === 'Unnamed Chat' ? '' : title;
 
   // Determine if node should be saved to backend
   const shouldSaveNode = useCallback((chatNode: AIChatNode): boolean => {
@@ -41,7 +47,9 @@ export function AIChatNodeEditor({
   // Handle title/name changes
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newTitle = e.target.value;
-    chatNode.setTitle(newTitle);
+    // If user clears the input or types the placeholder, revert to default
+    const titleToSet = newTitle.trim() === '' ? 'Unnamed Chat' : newTitle;
+    chatNode.setTitle(titleToSet);
     
     // Use onNodeUpdate with complete node state
     if (shouldSaveNode(chatNode)) {
@@ -191,11 +199,25 @@ export function AIChatNodeEditor({
         
         // Update sources from RAG context
         if (ragResponse.rag_context?.sources_used) {
-          const sources = ragResponse.rag_context.sources_used.map(sourceId => ({
-            nodeId: sourceId,
-            title: `Knowledge Source ${sourceId}`,
-            type: 'text'
-          }));
+          const sources = ragResponse.rag_context.sources_used.map((sourceData: string | any) => {
+            // Handle both string IDs and source objects from desktop app
+            if (typeof sourceData === 'string') {
+              return {
+                nodeId: sourceData,
+                title: `Knowledge Source ${sourceData}`,
+                type: 'text',
+                relevanceScore: ragResponse.rag_context?.retrieval_score || 0.0
+              };
+            } else {
+              // Desktop app passes source objects
+              return {
+                nodeId: sourceData.node_id || sourceData.nodeId || 'unknown',
+                title: sourceData.content || sourceData.title || `Knowledge Source ${sourceData.node_id || 'unknown'}`,
+                type: sourceData.node_type || sourceData.type || 'text',
+                relevanceScore: sourceData.retrieval_score || ragResponse.rag_context?.retrieval_score || 0.0
+              };
+            }
+          });
           chatNode.setSources(sources);
         }
         
@@ -215,14 +237,28 @@ export function AIChatNodeEditor({
             response_timestamp: new Date().toISOString(),
             generation_time_ms: ragResponse.rag_context?.generation_time_ms || null,
             overall_confidence: ragResponse.rag_context?.retrieval_score || null,
-            node_sources: ragResponse.rag_context?.sources_used?.map(sourceId => ({
-              node_id: sourceId,
-              content: `Knowledge Source ${sourceId}`, // Will be full content in real implementation
-              retrieval_score: ragResponse.rag_context?.retrieval_score || 0.0,
-              context_tokens: ragResponse.rag_context?.context_tokens || 0,
-              node_type: 'text',
-              last_modified: new Date().toISOString()
-            })) || [],
+            node_sources: ragResponse.rag_context?.sources_used?.map((sourceData: string | any) => {
+              // Handle both string IDs and source objects from desktop app
+              if (typeof sourceData === 'string') {
+                return {
+                  node_id: sourceData,
+                  content: `Knowledge Source ${sourceData}`,
+                  retrieval_score: ragResponse.rag_context?.retrieval_score || 0.0,
+                  context_tokens: ragResponse.rag_context?.context_tokens || 0,
+                  node_type: 'text',
+                  last_modified: new Date().toISOString()
+                };
+              } else {
+                return {
+                  node_id: sourceData.node_id || sourceData.nodeId || 'unknown',
+                  content: sourceData.content || sourceData.title || `Knowledge Source ${sourceData.node_id || 'unknown'}`,
+                  retrieval_score: sourceData.retrieval_score || ragResponse.rag_context?.retrieval_score || 0.0,
+                  context_tokens: sourceData.context_tokens || ragResponse.rag_context?.context_tokens || 0,
+                  node_type: sourceData.node_type || sourceData.type || 'text',
+                  last_modified: sourceData.last_modified || new Date().toISOString()
+                };
+              }
+            }) || [],
             error: null
           };
           
@@ -239,14 +275,12 @@ export function AIChatNodeEditor({
         
       } else {
         // Fallback to simulation if no callback provided (for demo/development)
-        console.warn('No onAIChatQuery callback provided, using simulation');
         const assistantMessage = await chatNode.simulateRAGResponse();
         chatNode.addMessage(assistantMessage);
         setCurrentAssistantMessage(assistantMessage);
       }
       
     } catch (error) {
-      console.error('Failed to get AI response:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
       chatNode.setError(errorMessage);
       chatNode.setLoadingState('error' as any);
@@ -320,7 +354,7 @@ export function AIChatNodeEditor({
           className="ns-ai-chat-indicator ns-node-indicator"
           style={{
             position: 'relative',
-            marginTop: '10px',
+            marginTop: '4px',
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
@@ -369,25 +403,95 @@ export function AIChatNodeEditor({
             />
           </svg>
         </div>
-        <TextareaAutosize
-          ref={(el) => {
-            textareaRefs.current[nodeId] = el; // Use main nodeId for focus management
-          }}
-          className="ns-node-textarea"
-          value={chatNode.getTitle()}
-          onChange={handleTitleChange}
-          onFocus={() => onFocus(nodeId)}
-          onBlur={onBlur}
-          onKeyDown={onKeyDown}
-          onClick={onClick}
-          placeholder="AI Chat Title..."
-          minRows={1}
-          style={{
-            resize: 'none',
-            overflow: 'hidden',
-            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-          }}
-        />
+        
+        {/* Title Display Mode: Show rendered markdown when not focused */}
+        {!focused && hasTitle && (
+          <div 
+            className="ns-markdown-display"
+            onClick={() => onFocus(nodeId)}
+            style={{
+              cursor: 'text',
+              minHeight: '20px',
+              padding: '1px 0',
+              width: '100%',
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              fontSize: '14px',
+              lineHeight: '1.4',
+              margin: 0,
+              border: 'none',
+              background: 'transparent'
+            }}
+          >
+            <ReactMarkdown 
+              components={{
+                p: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+                h1: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                h2: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                h3: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                h4: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                h5: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                h6: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                ul: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+                ol: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+                li: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>• {children}</div>,
+                strong: ({children}) => <span style={{fontWeight: 'bold', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>,
+                em: ({children}) => <span style={{fontStyle: 'italic', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>,
+                code: ({children}) => <span style={{fontFamily: 'inherit', fontSize: 'inherit', backgroundColor: 'rgba(0,0,0,0.1)', padding: '1px 3px', borderRadius: '2px'}}>{children}</span>,
+                pre: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', backgroundColor: 'rgba(0,0,0,0.1)', padding: '8px', borderRadius: '4px', whiteSpace: 'pre-wrap'}}>{children}</div>,
+                blockquote: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', borderLeft: '3px solid #ccc', paddingLeft: '12px'}}>{children}</div>,
+                a: ({children, href}) => <span style={{color: '#0066cc', textDecoration: 'underline', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>
+              }}
+            >{title}</ReactMarkdown>
+          </div>
+        )}
+        
+        {/* Title Display Mode: Show empty title area when not focused and empty/default */}
+        {!focused && !hasTitle && (
+          <div 
+            className="ns-text-placeholder"
+            onClick={() => onFocus(nodeId)}
+            style={{
+              cursor: 'text',
+              minHeight: '20px',
+              padding: '1px 0',
+              width: '100%',
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              fontSize: '14px',
+              lineHeight: '1.4'
+            }}
+          >
+            {/* Empty - no placeholder text */}
+          </div>
+        )}
+        
+        {/* Title Edit Mode: Show textarea when focused */}
+        {focused && (
+          <TextareaAutosize
+            ref={(el) => {
+              textareaRefs.current[nodeId] = el; // Use main nodeId for focus management
+            }}
+            className="ns-node-textarea"
+            value={displayTitle}
+            onChange={handleTitleChange}
+            onFocus={() => onFocus(nodeId)}
+            onBlur={onBlur}
+            onKeyDown={onKeyDown}
+            onClick={onClick}
+            placeholder="Unnamed Chat"
+            minRows={1}
+            style={{
+              resize: 'none',
+              overflow: 'hidden',
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              fontSize: '14px',
+              lineHeight: '1.4',
+              padding: '1px 0',
+              margin: 0,
+              border: 'none',
+              background: 'transparent'
+            }}
+          />
+        )}
       </div>
 
       {/* Chat Area - Separate container below title */}
@@ -486,30 +590,33 @@ export function AIChatNodeEditor({
           {response && !error && (
             <div className="ns-ai-chat-response">
               <div className="ns-ai-chat-response-content">
-                {/* Simple markdown-like formatting */}
-                {response.split('\n').map((line, index) => {
-                  if (line.startsWith('**') && line.endsWith('**')) {
-                    return (
-                      <strong key={index} className="ns-ai-chat-heading">
-                        {line.slice(2, -2)}
-                      </strong>
-                    );
-                  } else if (line.startsWith('- ')) {
-                    return (
-                      <div key={index} className="ns-ai-chat-bullet">
-                        • {line.slice(2)}
-                      </div>
-                    );
-                  } else if (line.trim() === '') {
-                    return <br key={index} />;
-                  } else {
-                    return (
-                      <div key={index} className="ns-ai-chat-paragraph">
-                        {line}
-                      </div>
-                    );
-                  }
-                })}
+                {/* Proper markdown rendering with consistent styling */}
+                <div style={{
+                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                  fontSize: '14px',
+                  lineHeight: '1.4'
+                }}>
+                  <ReactMarkdown 
+                    components={{
+                      p: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+                      h1: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                      h2: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                      h3: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                      h4: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                      h5: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                      h6: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+                      ul: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+                      ol: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+                      li: ({children}) => <div style={{margin: '0 0 4px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>• {children}</div>,
+                      strong: ({children}) => <span style={{fontWeight: 'bold', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>,
+                      em: ({children}) => <span style={{fontStyle: 'italic', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>,
+                      code: ({children}) => <span style={{fontFamily: 'inherit', fontSize: 'inherit', backgroundColor: 'rgba(0,0,0,0.1)', padding: '1px 3px', borderRadius: '2px'}}>{children}</span>,
+                      pre: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', backgroundColor: 'rgba(0,0,0,0.1)', padding: '8px', borderRadius: '4px', whiteSpace: 'pre-wrap'}}>{children}</div>,
+                      blockquote: ({children}) => <div style={{margin: '0 0 8px 0', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', borderLeft: '3px solid #ccc', paddingLeft: '12px'}}>{children}</div>,
+                      a: ({children, href}) => <span style={{color: '#0066cc', textDecoration: 'underline', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>
+                    }}
+                  >{response}</ReactMarkdown>
+                </div>
               </div>
 
               {/* Enhanced Sources Section with RAG Context */}
@@ -527,16 +634,19 @@ export function AIChatNodeEditor({
                   {/* Enhanced Source Attribution List */}
                   {sources.length > 0 && (
                     <div className="ns-ai-chat-sources-list">
-                      {sources.map((source, index) => (
-                        <RAGSourcePreview
-                          key={index}
-                          source={source}
-                          relevanceScore={currentAssistantMessage?.rag_context?.retrieval_score}
-                          onSourceClick={(nodeId) => {
-                            // Source navigation to be implemented
-                          }}
-                        />
-                      ))}
+                      {sources.map((source, index) => {
+                        const finalScore = source.relevanceScore || currentAssistantMessage?.rag_context?.retrieval_score;
+                        return (
+                          <RAGSourcePreview
+                            key={index}
+                            source={source}
+                            relevanceScore={finalScore}
+                            onSourceClick={(nodeId) => {
+                              // Source navigation to be implemented
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                   

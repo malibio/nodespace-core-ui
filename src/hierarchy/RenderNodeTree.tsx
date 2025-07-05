@@ -35,7 +35,6 @@ export function RenderNodeTree(props: RenderNodeTreeProps) {
   // Only render root nodes (nodes without parents) to avoid duplicates
   const rootNodes = nodes.filter(node => !node.parent);
   
-  // Debug rendering removed for cleaner console output
   
   return (
     <div className="ns-nodes-container">

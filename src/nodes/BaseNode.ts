@@ -7,7 +7,6 @@ function generateSafeNodeId(): string {
   try {
     return uuidv4();
   } catch (error) {
-    console.warn('UUID generation failed, using timestamp fallback:', error);
     // Fallback to timestamp-based ID with random suffix
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 5);

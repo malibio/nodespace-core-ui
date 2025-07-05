@@ -131,7 +131,6 @@ export class NodeCRUDManager {
         if (result instanceof Promise) {
           result.catch(error => {
             // Callback failures are handled silently for fire-and-forget pattern
-            console.warn('Node creation callback failed:', error);
           });
         }
       }

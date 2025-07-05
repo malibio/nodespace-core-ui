@@ -13,7 +13,7 @@ export class TextNodeKeyboardHandler implements NodeKeyboardHandler {
   }
   
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
-    const { cursorPosition, content, callbacks } = context;
+    const { cursorPosition, content /* callbacks */ } = context;
     
     // Special case: cursor at beginning - create virtual node above
     if (cursorPosition === 0) {

@@ -13,7 +13,7 @@ export class AIChatNodeKeyboardHandler implements NodeKeyboardHandler {
   }
   
   handleEnter(node: BaseNode, context: EditContext): KeyboardResult {
-    const { cursorPosition, content } = context;
+    const { /* cursorPosition, content */ } = context;
     
     // For AIChatNode, Enter always creates a new TextNode sibling below
     // (since AIChatNode content should not be split)

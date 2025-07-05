@@ -84,9 +84,6 @@ export function RAGSourcePreview({
         <span className="ns-ai-chat-source-title">
           {source.title}
         </span>
-        <span className="ns-ai-chat-source-type">
-          ({source.type})
-        </span>
         {relevanceScore !== undefined && (
           <span 
             className="ns-relevance-score"

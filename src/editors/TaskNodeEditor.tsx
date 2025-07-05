@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
+import ReactMarkdown from 'react-markdown';
 import { NodeEditorProps } from './TextNodeEditor';
 import { TaskNode } from '../nodes';
 
@@ -10,6 +11,7 @@ import { TaskNode } from '../nodes';
 export function TaskNodeEditor({
   node,
   nodeId,
+  focused,
   textareaRefs,
   onFocus,
   onBlur,
@@ -21,6 +23,9 @@ export function TaskNodeEditor({
   const hasChildren = node.children.length > 0;
   const [, forceUpdate] = useState({});
   const triggerUpdate = useCallback(() => forceUpdate({}), []);
+  
+  const content = node.getContent();
+  const hasContent = content.trim().length > 0;
 
   const renderCheckbox = () => {
     const status = taskNode.getStatus();
@@ -123,7 +128,7 @@ export function TaskNodeEditor({
         onClick={handleCheckboxClick}
         style={{
           cursor: 'pointer',
-          marginTop: '10px',
+          marginTop: '4px',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
@@ -134,28 +139,98 @@ export function TaskNodeEditor({
       >
 {renderCheckbox()}
       </div>
-      <TextareaAutosize
-        ref={(el) => {
-          textareaRefs.current[nodeId] = el;
-        }}
-        className="ns-node-textarea"
-        value={node.getContent()}
-        onChange={(e) => {
-          node.setContent(e.target.value);
-          onContentChange(e.target.value);
-        }}
-        onFocus={() => onFocus(nodeId)}
-        onBlur={onBlur}
-        onKeyDown={onKeyDown}
-        onClick={onClick}
-        minRows={1}
-        style={{
-          resize: 'none',
-          overflow: 'hidden',
-          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          flex: 1
-        }}
-      />
+      
+      {/* Display Mode: Show rendered markdown when not focused */}
+      {!focused && hasContent && (
+        <div 
+          className="ns-markdown-display"
+          onClick={() => onFocus(nodeId)}
+          style={{
+            cursor: 'text',
+            minHeight: '20px',
+            padding: '1px 0',
+            flex: 1,
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '14px',
+            lineHeight: '1.4',
+            margin: 0,
+            border: 'none',
+            background: 'transparent'
+          }}
+        >
+          <ReactMarkdown 
+            components={{
+              p: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+              h1: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+              h2: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+              h3: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+              h4: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+              h5: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+              h6: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', fontWeight: 'bold'}}>{children}</div>,
+              ul: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+              ol: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>{children}</div>,
+              li: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit'}}>• {children}</div>,
+              strong: ({children}) => <span style={{fontWeight: 'bold', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>,
+              em: ({children}) => <span style={{fontStyle: 'italic', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>,
+              code: ({children}) => <span style={{fontFamily: 'inherit', fontSize: 'inherit', backgroundColor: 'rgba(0,0,0,0.1)', padding: '1px 3px', borderRadius: '2px'}}>{children}</span>,
+              pre: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', backgroundColor: 'rgba(0,0,0,0.1)', padding: '8px', borderRadius: '4px', whiteSpace: 'pre-wrap'}}>{children}</div>,
+              blockquote: ({children}) => <div style={{margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', borderLeft: '3px solid #ccc', paddingLeft: '12px'}}>{children}</div>,
+              a: ({children, href}) => <span style={{color: '#0066cc', textDecoration: 'underline', fontFamily: 'inherit', fontSize: 'inherit'}}>{children}</span>
+            }}
+          >{content}</ReactMarkdown>
+        </div>
+      )}
+      
+      {/* Display Mode: Show empty content area when not focused and empty */}
+      {!focused && !hasContent && (
+        <div 
+          className="ns-text-placeholder"
+          onClick={() => onFocus(nodeId)}
+          style={{
+            cursor: 'text',
+            minHeight: '20px',
+            padding: '1px 0',
+            flex: 1,
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '14px',
+            lineHeight: '1.4'
+          }}
+        >
+          {/* Empty - no placeholder text */}
+        </div>
+      )}
+      
+      {/* Edit Mode: Show textarea when focused */}
+      {focused && (
+        <TextareaAutosize
+          ref={(el) => {
+            textareaRefs.current[nodeId] = el;
+          }}
+          className="ns-node-textarea"
+          value={content}
+          onChange={(e) => {
+            node.setContent(e.target.value);
+            onContentChange(e.target.value);
+          }}
+          onFocus={() => onFocus(nodeId)}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+          onClick={onClick}
+          minRows={1}
+          style={{
+            resize: 'none',
+            overflow: 'hidden',
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '14px',
+            lineHeight: '1.4',
+            padding: '1px 0',
+            margin: 0,
+            border: 'none',
+            background: 'transparent',
+            flex: 1
+          }}
+        />
+      )}
     </div>
   );
 }

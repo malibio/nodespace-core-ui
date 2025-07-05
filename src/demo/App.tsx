@@ -6,10 +6,16 @@ import { RAGQueryRequest, RAGQueryResponse, ChatMessage, RAGResponseStatus } fro
 import './demo.css';
 
 function DemoApp() {
-  // Start with empty nodes to test empty state behavior
-  const [nodes, setNodes] = useState<BaseNode[]>([]);
+  // Start with a default node to showcase markdown rendering
+  const [nodes, setNodes] = useState<BaseNode[]>(() => {
+    const { TextNode } = require('../nodes');
+    const defaultNode = new TextNode('# Product Launch Campaign Strategy');
+    return [defaultNode];
+  });
   const [logs, setLogs] = useState<string[]>([]);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  // Add focus state management
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
   // Add logging helper
   const addLog = (message: string) => {
@@ -55,23 +61,15 @@ function DemoApp() {
       addLog(logMessage);
       
       // In a real app, you'd persist the node data here
-      console.log('🔔 Node Update Event Received:', {
-        nodeId,
-        nodeData
-      });
     },
     
     onNodesChange: (updatedNodes: BaseNode[]) => {
       addLog(`🔄 NODES UPDATED: ${updatedNodes.length} total nodes`);
       
       // Debug the structure being received
-      console.log('🔄 DEMO: onNodesChange received nodes:', updatedNodes.length);
-      console.log('🔄 DEMO: Root nodes:', updatedNodes.filter(n => !n.parent).map(n => `"${n.getContent()}"`));
-      console.log('🔄 DEMO: Nodes with parents:', updatedNodes.filter(n => n.parent).map(n => `"${n.getContent()}" -> parent: "${n.parent!.getContent()}"`));
       
       setNodes(updatedNodes);
       
-      console.log('🔄 DEMO: setNodes called, React will re-render');
     },
     
     onNodeDelete: (nodeId: string) => {
@@ -80,27 +78,57 @@ function DemoApp() {
 
     // NEW: AI Chat callbacks for testing RAG integration
     onAIChatQuery: async (request: RAGQueryRequest): Promise<RAGQueryResponse> => {
-      addLog(`🤖 AI CHAT QUERY: "${request.query}" (Session: ${request.session_id.slice(0, 8)}...)`);
+      try {
+        addLog(`🤖 AI CHAT QUERY: "${request.query}" (Session: ${request.session_id.slice(0, 8)}...)`);
+        
+        // Simulate AI processing delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Create mock response based on query
+        const mockResponse: RAGQueryResponse = {
+          message_id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          content: `**AI Response to:** "${request.query}"\n\n✅ **This callback is working!** The desktop app would normally:\n- Send this query to the backend AI service\n- Retrieve relevant knowledge from your database\n- Generate a contextual response with source attribution\n\n**Mock Knowledge Sources Found:**\n- Demo Document 1: Project planning notes\n- Demo Document 2: Technical specifications\n- Demo Document 3: Meeting transcripts\n\n*Note: This is a demo response from the core-ui component callbacks.*`,
+          rag_context: {
+            sources_used: [
+              {
+                node_id: 'demo-doc-1',
+                content: '**Public Relations**: Partnership with external PR agency plus internal coordination',
+                retrieval_score: 0.92,
+                context_tokens: 150,
+                node_type: 'text',
+                last_modified: new Date().toISOString()
+              },
+              {
+                node_id: 'demo-doc-2', 
+                content: '**Campaign Management**: 40% of marketing team capacity for 12 weeks',
+                retrieval_score: 0.87,
+                context_tokens: 120,
+                node_type: 'text',
+                last_modified: new Date().toISOString()
+              },
+              {
+                node_id: 'demo-doc-3',
+                content: '**Performance Marketing**: Full-time focus from digital marketing specialists',
+                retrieval_score: 0.95,
+                context_tokens: 100,
+                node_type: 'text',
+                last_modified: new Date().toISOString()
+              }
+            ],
+            retrieval_score: 0.91,
+            context_tokens: 370,
+            generation_time_ms: 1850,
+            knowledge_summary: 'Found relevant information from 3 demo knowledge sources'
+          },
+          status: RAGResponseStatus.Success
+        };
       
-      // Simulate AI processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create mock response based on query
-      const mockResponse: RAGQueryResponse = {
-        message_id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        content: `**AI Response to:** "${request.query}"\n\n✅ **This callback is working!** The desktop app would normally:\n- Send this query to the backend AI service\n- Retrieve relevant knowledge from your database\n- Generate a contextual response with source attribution\n\n**Mock Knowledge Sources Found:**\n- Demo Document 1: Project planning notes\n- Demo Document 2: Technical specifications\n- Demo Document 3: Meeting transcripts\n\n*Note: This is a demo response from the core-ui component callbacks.*`,
-        rag_context: {
-          sources_used: ['demo-doc-1', 'demo-doc-2', 'demo-doc-3'],
-          retrieval_score: 0.89,
-          context_tokens: 420,
-          generation_time_ms: 1850,
-          knowledge_summary: 'Found relevant information from 3 demo knowledge sources'
-        },
-        status: RAGResponseStatus.Success
-      };
-      
-      addLog(`✅ AI RESPONSE: Generated response with ${mockResponse.rag_context.sources_used.length} sources`);
-      return mockResponse;
+        addLog(`✅ AI RESPONSE: Generated response with ${mockResponse.rag_context.sources_used.length} sources`);
+        return mockResponse;
+      } catch (error) {
+        console.error('❌ Error in onAIChatQuery:', error);
+        throw error;
+      }
     },
 
     onAIChatMessageSent: (message: ChatMessage, nodeId: string) => {
@@ -149,7 +177,16 @@ function DemoApp() {
           <h2>Editor</h2>
           <NodeSpaceEditor
             nodes={nodes}
+            focusedNodeId={focusedNodeId}
             callbacks={callbacks}
+            onFocus={(nodeId: string) => {
+              setFocusedNodeId(nodeId);
+              addLog(`🎯 FOCUS: Node ${nodeId.slice(0, 8)}...`);
+            }}
+            onBlur={() => {
+              setFocusedNodeId(null);
+              addLog(`🌫️ BLUR: Focus cleared`);
+            }}
             className={`demo-editor${isDarkMode ? ' ns-dark-mode' : ''}`}
           />
         </div>

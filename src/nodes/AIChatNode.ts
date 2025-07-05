@@ -18,6 +18,7 @@ export interface AIChatData {
     nodeId: string;
     title: string;
     type: string;
+    relevanceScore?: number;
   }>;
 }
 
@@ -144,11 +145,11 @@ export class AIChatNode extends BaseNode {
     this.chatData.error = error;
   }
 
-  getSources(): Array<{ nodeId: string; title: string; type: string }> {
+  getSources(): Array<{ nodeId: string; title: string; type: string; relevanceScore?: number }> {
     return [...this.chatData.sources];
   }
 
-  setSources(sources: Array<{ nodeId: string; title: string; type: string }>): void {
+  setSources(sources: Array<{ nodeId: string; title: string; type: string; relevanceScore?: number }>): void {
     this.chatData.sources = sources;
   }
 
@@ -314,7 +315,8 @@ export class AIChatNode extends BaseNode {
       this.setSources(ragContext.sources_used.map(id => ({
         nodeId: id,
         title: `Knowledge Source ${id}`,
-        type: 'text'
+        type: 'text',
+        relevanceScore: ragContext.retrieval_score
       })));
 
       this.setLoadingState(ChatLoadingState.Idle);

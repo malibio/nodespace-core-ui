@@ -159,18 +159,14 @@ export function NodeEditor({
   };
 
   const handleSlashOptionSelect = async (option: SlashCommandOption) => {
-    const textarea = textareaRefs.current[nodeId];
-    if (!textarea) return;
-
     const content = node.getContent();
     
     // Remove the "/" character and any query text after it
-    const currentCursorPosition = textarea.selectionStart;
-    const contentBeforeCursor = content.substring(0, currentCursorPosition);
-    const lastSlashIndex = contentBeforeCursor.lastIndexOf('/');
-    
-    // Remove from slash position to current cursor position
-    const newContent = content.substring(0, lastSlashIndex) + content.substring(currentCursorPosition);
+    // For markdown display mode, we'll just remove the leading "/"
+    let newContent = content;
+    if (content.startsWith('/')) {
+      newContent = content.substring(1);
+    }
     
     // Special handling for image node type
     if (option.nodeType === 'image') {
@@ -178,15 +174,22 @@ export function NodeEditor({
 
         // Show loading state by updating node content
         node.setContent('📸 Loading image...');
-        // TEMPORARILY DISABLED - Don't trigger node creation events for slash commands
         // callbacks.onNodesChange?.([...nodes]);
 
         let imageData: ImageUploadResult | undefined;
 
+        // Check Tauri environment
+        const hasTauri = typeof window !== 'undefined' && (window as any).__TAURI__;
+
         // Try Tauri invoke first (for desktop app environment)
-        if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+        if (hasTauri) {
           const { invoke } = (window as any).__TAURI__.tauri;
-          imageData = await invoke('create_image_node');
+          
+          try {
+            imageData = await invoke('create_image_node');
+          } catch (tauriError) {
+            throw tauriError;
+          }
         }
         // Fallback to callback pattern (for standalone/demo environment) 
         else if (callbacks.onImageNodeCreate) {
@@ -253,28 +256,52 @@ export function NodeEditor({
           
           // Focus the new node after creation
           setTimeout(() => {
-            const newTextarea = textareaRefs.current[imageNode.getNodeId()];
-            if (newTextarea) {
-              newTextarea.focus();
-              newTextarea.setSelectionRange(newContent.length, newContent.length);
-            }
+            // Update focus state first
+            onFocus(imageNode.getNodeId());
+            
+            // Then focus the textarea (it should exist after onFocus triggers re-render)
+            setTimeout(() => {
+              const newTextarea = textareaRefs.current[imageNode.getNodeId()];
+              if (newTextarea) {
+                newTextarea.focus();
+                newTextarea.setSelectionRange(newContent.length, newContent.length);
+              }
+            }, 50); // Small delay to allow re-render
           }, 0);
         }
       } catch (error) {
-        // Handle error gracefully
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        node.setContent(`❌ Image upload failed: ${errorMessage}`);
-        // TEMPORARILY DISABLED - Don't trigger node creation events for slash commands
+        console.error('Image upload failed:', error);
+        
+        // Handle error gracefully with specific guidance
+        let userMessage = '❌ Image upload failed';
+        
+        if (error instanceof Error) {
+          // Provide specific guidance based on error type
+          if (error.message.includes('not found') || error.message.includes('command')) {
+            userMessage = '❌ Image upload unavailable - Desktop app feature not found';
+          } else if (error.message.includes('permission') || error.message.includes('access')) {
+            userMessage = '❌ Image upload blocked - Permission denied';
+          } else if (error.message.includes('canceled') || error.message.includes('cancelled')) {
+            userMessage = '📸 Image selection cancelled';
+          } else {
+            userMessage = `❌ Image upload failed: ${error.message}`;
+          }
+        } else {
+          userMessage = '❌ Image upload failed: Unknown error';
+        }
+        
+        
+        node.setContent(userMessage);
         // callbacks.onNodesChange?.([...nodes]);
         
         // Show error for a few seconds, then restore original content
+        // Use longer timeout for cancelled operations (shorter feedback cycle)
+        const timeoutDuration = userMessage.includes('cancelled') ? 1500 : 4000;
         setTimeout(() => {
           node.setContent(newContent);
-          // TEMPORARILY DISABLED - Don't trigger node creation events for slash commands
-          // callbacks.onNodesChange?.([...nodes]);
-        }, 3000);
+            // callbacks.onNodesChange?.([...nodes]);
+        }, timeoutDuration);
         
-        console.error('Image upload failed:', error);
       }
     }
     // Handle other node types with existing logic
@@ -342,11 +369,17 @@ export function NodeEditor({
       
       // Focus the new node after conversion
       setTimeout(() => {
-        const newTextarea = textareaRefs.current[newNode.getNodeId()];
-        if (newTextarea) {
-          newTextarea.focus();
-          newTextarea.setSelectionRange(newContent.length, newContent.length);
-        }
+        // Update focus state first
+        onFocus(newNode.getNodeId());
+        
+        // Then focus the textarea (it should exist after onFocus triggers re-render)
+        setTimeout(() => {
+          const newTextarea = textareaRefs.current[newNode.getNodeId()];
+          if (newTextarea) {
+            newTextarea.focus();
+            newTextarea.setSelectionRange(newContent.length, newContent.length);
+          }
+        }, 50); // Small delay to allow re-render
       }, 0);
     } else {
       // Same node type, just update content

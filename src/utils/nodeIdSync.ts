@@ -23,7 +23,6 @@ export function updateNodeId(
   // Find the node with the temporary ID
   const nodeToUpdate = findNodeById(nodes, temporaryId);
   if (!nodeToUpdate) {
-    console.warn(`Node with temporary ID ${temporaryId} not found`);
     return focusedNodeId;
   }
 

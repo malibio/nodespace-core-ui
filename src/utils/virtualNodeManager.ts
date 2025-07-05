@@ -67,15 +67,14 @@ export class VirtualNodeManager {
 
     try {
       // Create callback lambda for desktop-app to provide real UUID
-      const getNewNodeIdLambda = (newNodeId: string) => {
-        this.finalizeConversion(virtualNodeId, newNodeId);
-      };
+      // const getNewNodeIdLambda = (newNodeId: string) => {
+      //   this.finalizeConversion(virtualNodeId, newNodeId);
+      // };
 
       // Use fire-and-forget pattern with contentPersistenceManager
       // No callback needed - virtual nodes are now handled by content persistence
       this.finalizeConversion(virtualNodeId, virtualNode.getNodeId());
     } catch (error) {
-      console.error('Virtual to real conversion failed:', error);
       this.revertToVirtual(virtualNodeId);
     }
   }
@@ -110,7 +109,6 @@ export class VirtualNodeManager {
       return;
     }
 
-    console.warn(`Reverting virtual node ${virtualNodeId} due to conversion failure`);
     
     // Keep as virtual, but stop current conversion attempt
     conversion.isConverting = false;
@@ -119,7 +117,6 @@ export class VirtualNodeManager {
     setTimeout(() => {
       const retryConversion = this.pendingConversions.get(virtualNodeId);
       if (retryConversion && !retryConversion.isConverting) {
-        console.log(`Retrying conversion for virtual node ${virtualNodeId}`);
         this.convertVirtualToReal(virtualNodeId);
       }
     }, 1000);

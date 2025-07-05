@@ -117,7 +117,7 @@ const NodeSpaceEditor = React.forwardRef<NodeSpaceEditorRef, NodeSpaceEditorProp
   // Content persistence manager - create once and update callbacks as needed
   const contentPersistenceManager = useMemo(() => {
     return new ContentPersistenceManager(callbacks, 500); // 500ms debounce
-  }, []); // Empty deps = create once, never recreate
+  }, [callbacks]); // Include callbacks dependency
 
   // Update callbacks when they change, preserving debounce state
   useEffect(() => {

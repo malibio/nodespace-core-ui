@@ -168,7 +168,7 @@
   position: absolute;
   /* Position horizontally centered with THIS node's circle (dynamically calculated) */
   left: var(--ns-vertical-line-left, calc(21px + (var(--depth, 0) * 24px))); /* Dynamic position with fallback */
-  top: 20.5px; /* Starting just below the circle */
+  top: 12.5px; /* Starting at the center of the indicator */
   width: 0px; /* Remove width to eliminate background line */
   /* Dynamic height calculated from last child circle position */
   height: var(--ns-line-height, 2000px); /* Fallback to large height */
@@ -405,7 +405,7 @@
 .ns-collapse-triangle {
   width: 9px;
   height: 9px;
-  margin-top: 11.2px;
+  margin-top: 5.2px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -419,7 +419,7 @@
 .ns-collapse-spacer {
   width: 9px;
   height: 9px;
-  margin-top: 11.2px;
+  margin-top: 5.2px;
   flex-shrink: 0;
   position: relative;
 }
@@ -1215,7 +1215,7 @@
 /* These styles apply when .ns-dark-mode class is added to the .ns-editor-container */
 
 /* Editor container dark mode */
-.ns-editor-container.ns-dark-mode {
+.ns-dark-mode {
   /* Define shared dark mode color variables for consistency */
   --ns-dark-bg: #1a1a1a;
   --ns-dark-surface: #2a2a2a;
@@ -1230,35 +1230,35 @@
 }
 
 /* Global text color override for dark mode */
-.ns-editor-container.ns-dark-mode * {
+.ns-dark-mode * {
   color: inherit;
 }
 
 /* Ensure all text elements use dark mode colors */
-.ns-editor-container.ns-dark-mode input,
-.ns-editor-container.ns-dark-mode textarea,
-.ns-editor-container.ns-dark-mode div {
+.ns-dark-mode input,
+.ns-dark-mode textarea,
+.ns-dark-mode div {
   color: var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-editor-status {
+.ns-dark-mode .ns-editor-status {
   color: var(--ns-dark-text-muted);
 }
 
 /* Canvas container dark mode */
-.ns-editor-container.ns-dark-mode .ns-nodes-container {
+.ns-dark-mode .ns-nodes-container {
   background: transparent; /* Transparent for unified canvas */
   border: none; /* No border for unified canvas */
 }
 
 /* Node text areas */
-.ns-editor-container.ns-dark-mode .ns-node-textarea {
+.ns-dark-mode .ns-node-textarea {
   background: transparent; /* Keep transparent for unified canvas */
   color: var(--ns-dark-text);
   border: none !important; /* Ensure no borders in dark mode */
 }
 
-.ns-editor-container.ns-dark-mode .ns-node-textarea:focus {
+.ns-dark-mode .ns-node-textarea:focus {
   border: none !important;
   outline: none !important;
   background: transparent !important;
@@ -1266,16 +1266,16 @@
 }
 
 /* Dark mode hover state */
-.ns-editor-container.ns-dark-mode .ns-node-container:hover .ns-node-textarea:not(:focus) {
+.ns-dark-mode .ns-node-container:hover .ns-node-textarea:not(:focus) {
   background: transparent;
 }
 
-.ns-editor-container.ns-dark-mode .ns-node-textarea::placeholder {
+.ns-dark-mode .ns-node-textarea::placeholder {
   color: #888;
 }
 
 /* Node indicators */
-.ns-editor-container.ns-dark-mode .ns-node-indicator {
+.ns-dark-mode .ns-node-indicator {
   --ns-circle-color: var(--ns-dark-text);
   --ns-parent-border-color: #888;
   --ns-background-color: var(--ns-dark-surface);
@@ -1283,166 +1283,170 @@
 }
 
 /* All SVG icons in indicators should inherit from ns-circle-color */
-.ns-editor-container.ns-dark-mode .ns-node-indicator svg {
+.ns-dark-mode .ns-node-indicator svg {
   fill: var(--ns-circle-color);
   color: var(--ns-circle-color);
 }
 
 /* Hierarchical lines */
-.ns-editor-container.ns-dark-mode .ns-node-wrapper[data-has-children="true"][data-collapsed="false"]::before {
+.ns-dark-mode .ns-node-wrapper[data-has-children="true"][data-collapsed="false"]::before {
   background-color: #555;
 }
 
-.ns-editor-container.ns-dark-mode .ns-node-wrapper[data-has-children="true"]::after {
+.ns-dark-mode .ns-node-wrapper[data-has-children="true"]::after {
   background-color: #555;
 }
 
 /* Collapse triangles */
-.ns-editor-container.ns-dark-mode .ns-collapse-triangle {
+.ns-dark-mode .ns-collapse-triangle {
   color: var(--ns-dark-text-muted);
   border-color: transparent transparent transparent var(--ns-dark-text-muted);
 }
 
-.ns-editor-container.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"] {
+.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"] {
   border-color: var(--ns-dark-text-muted) transparent transparent transparent;
 }
 
-.ns-editor-container.ns-dark-mode .ns-collapse-triangle:hover {
+.ns-dark-mode .ns-collapse-triangle:hover {
   color: var(--ns-dark-text);
   border-color: transparent transparent transparent var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"]:hover {
+.ns-dark-mode .ns-collapse-triangle[data-collapsed="true"]:hover {
   border-color: var(--ns-dark-text) transparent transparent transparent;
 }
 
 /* Task nodes */
-.ns-editor-container.ns-dark-mode .ns-task-editor-container {
+.ns-dark-mode .ns-task-editor-container {
   color: var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-task-checkbox {
+.ns-dark-mode .ns-task-checkbox {
   --ns-circle-color: var(--ns-dark-text);
   --ns-parent-border-color: #888;
 }
 
 /* AI Chat nodes */
-.ns-editor-container.ns-dark-mode .ns-ai-chat-container {
+.ns-dark-mode .ns-ai-chat-container {
   color: var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-editor {
-  background: #333333 !important;
-  border: 1px solid #4a4a4a;
+.ns-dark-mode .ns-ai-chat-editor {
+  background: var(--ns-dark-surface, #2a2a2a) !important;
+  border: 1px solid var(--ns-dark-border, #444) !important;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-title {
+.ns-dark-mode .ns-ai-chat-title {
   color: var(--ns-dark-text);
   background: transparent;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-question {
+.ns-dark-mode .ns-ai-chat-question {
   color: var(--ns-dark-text, #e0e0e0) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid #4a4a4a !important;
+  background: transparent !important;
+  border: none !important;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-input {
+.ns-dark-mode .ns-ai-chat-question::placeholder {
+  color: #888 !important;
+}
+
+.ns-dark-mode .ns-ai-chat-input {
   background: var(--ns-dark-surface);
   color: var(--ns-dark-text);
   border-color: var(--ns-dark-border);
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-input:focus {
+.ns-dark-mode .ns-ai-chat-input:focus {
   background: var(--ns-dark-surface-hover);
   border-color: #666;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-response {
+.ns-dark-mode .ns-ai-chat-response {
   background: var(--ns-dark-surface);
   border-color: var(--ns-dark-border);
   color: var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-response-content {
+.ns-dark-mode .ns-ai-chat-response-content {
   color: var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-button {
+.ns-dark-mode .ns-ai-chat-button {
   background: var(--ns-dark-surface-hover);
   border-color: #555;
   color: var(--ns-dark-text);
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-button:hover {
+.ns-dark-mode .ns-ai-chat-button:hover {
   background: var(--ns-dark-border);
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-button.primary {
+.ns-dark-mode .ns-ai-chat-button.primary {
   background: #0056b3;
   border-color: #0056b3;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-button.primary:hover {
+.ns-dark-mode .ns-ai-chat-button.primary:hover {
   background: #004494;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-retry {
+.ns-dark-mode .ns-ai-chat-retry {
   background: #dc2626;
   color: white;
 }
 
-.ns-editor-container.ns-dark-mode .ns-ai-chat-retry:hover {
+.ns-dark-mode .ns-ai-chat-retry:hover {
   background: #b91c1c;
 }
 
 /* Slash command modal */
-.ns-editor-container.ns-dark-mode .ns-slash-command-modal {
+.ns-dark-mode .ns-slash-command-modal {
   background: var(--ns-dark-surface);
   border-color: var(--ns-dark-border);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-.ns-editor-container.ns-dark-mode .ns-slash-command-option {
+.ns-dark-mode .ns-slash-command-option {
   color: var(--ns-dark-text);
   border-color: var(--ns-dark-border);
 }
 
-.ns-editor-container.ns-dark-mode .ns-slash-command-option:hover,
-.ns-editor-container.ns-dark-mode .ns-slash-command-option.ns-selected {
+.ns-dark-mode .ns-slash-command-option:hover,
+.ns-dark-mode .ns-slash-command-option.ns-selected {
   background: var(--ns-dark-surface-hover);
   color: #fff;
 }
 
-.ns-editor-container.ns-dark-mode .ns-slash-command-label {
+.ns-dark-mode .ns-slash-command-label {
   color: var(--ns-dark-text);
 }
 
 /* Persistence loading components */
-.ns-editor-container.ns-dark-mode .ns-loading-skeleton {
+.ns-dark-mode .ns-loading-skeleton {
   background: var(--ns-dark-surface);
   border-color: var(--ns-dark-border);
 }
 
-.ns-editor-container.ns-dark-mode .ns-loading-text {
+.ns-dark-mode .ns-loading-text {
   color: var(--ns-dark-text-muted);
 }
 
-.ns-editor-container.ns-dark-mode .ns-error-banner {
+.ns-dark-mode .ns-error-banner {
   background: #3a2a1a;
   border-color: #8a6a2a;
 }
 
-.ns-editor-container.ns-dark-mode .ns-error-title,
-.ns-editor-container.ns-dark-mode .ns-error-message {
+.ns-dark-mode .ns-error-title,
+.ns-dark-mode .ns-error-message {
   color: #fbbf24;
 }
 
-.ns-editor-container.ns-dark-mode .ns-retry-button {
+.ns-dark-mode .ns-retry-button {
   background: #0056b3;
   color: white;
 }
 
-.ns-editor-container.ns-dark-mode .ns-retry-button:hover {
+.ns-dark-mode .ns-retry-button:hover {
   background: #004494;
 }

@@ -158,7 +158,6 @@ export class ContentPersistenceManager {
           metadata: pending.metadata
         });
       } catch (error) {
-        console.warn('Node update persistence failed:', error);
         // Remove from persisted set so it can be retried
         this.persistedNodes.delete(nodeId);
       }
