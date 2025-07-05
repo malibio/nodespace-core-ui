@@ -1,23 +1,54 @@
-# ⚠️ BEFORE STARTING ANY WORK
-👉 **ALL development workflows are in**: `../nodespace-system-design`
-👉 **This README.md only contains**: Repository-specific React and TypeScript patterns
-
 # NodeSpace Core UI
 
-**React Component Library for Hierarchical Block Editor**
+**React component library for hierarchical block editing**
 
-This repository provides a React component library that implements a hierarchical block editor for NodeSpace. It's designed to be imported and used by the `nodespace-desktop-app`.
+This repository provides a React component library that implements a hierarchical block editor for NodeSpace applications. It serves as a pure UI layer with no backend dependencies, designed to be imported and used by the NodeSpace desktop application.
 
-## 🎯 Purpose
+## Overview
 
-- **Component Library** - Reusable React components for hierarchical block editing
-- **Default Export** - Single import provides complete editor functionality  
-- **Pure React** - No Tauri dependencies (handled by desktop app)
-- **CSS Bundled** - Styles automatically included with component imports
+NodeSpace Core UI delivers a complete hierarchical block editing experience as a reusable React component library. It provides sophisticated node management, visual hierarchy representation, and comprehensive keyboard interactions while maintaining clean separation between UI components and business logic.
 
-## 📦 Installation & Usage
+## Key Features
 
-### For NodeSpace Desktop App
+- **Hierarchical Block Editor** - Complete tree-based content editing with visual hierarchy
+- **Multiple Node Types** - Text, task, AI chat, and date nodes with extensible architecture
+- **Advanced Keyboard Navigation** - Full keyboard support with intelligent content manipulation
+- **Visual Hierarchy Indicators** - Connecting lines, collapse triangles, and type-specific indicators
+- **Dark Mode Support** - Complete theming system compatible with desktop applications
+- **Pure React Architecture** - No backend dependencies, clean component library design
+
+## Recent Updates
+
+### Component Library Optimization
+
+Major cleanup and optimization of the component library:
+
+- **Performance Improvements** - Removed debug logging and optimized rendering paths
+- **Enhanced Dark Mode** - Fixed CSS specificity issues for seamless desktop app integration
+- **Visual Hierarchy** - Improved triangle positioning and vertical line connections
+- **Code Quality** - Comprehensive cleanup removing unnecessary files and debug code
+- **TypeScript Compliance** - Full type safety with zero compilation errors
+
+## Architecture Context
+
+Part of the NodeSpace system architecture:
+
+1. [nodespace-core-types](https://github.com/malibio/nodespace-core-types) - Shared data structures and interfaces
+2. [nodespace-data-store](https://github.com/malibio/nodespace-data-store) - LanceDB vector storage implementation
+3. [nodespace-nlp-engine](https://github.com/malibio/nodespace-nlp-engine) - AI/ML processing and LLM integration
+4. [nodespace-core-logic](https://github.com/malibio/nodespace-core-logic) - Business logic orchestration
+5. **[nodespace-core-ui](https://github.com/malibio/nodespace-core-ui)** ← **You are here**
+6. [nodespace-desktop-app](https://github.com/malibio/nodespace-desktop-app) - Tauri application shell
+
+**Component Dependencies:**
+- Pure React with TypeScript
+- No backend service dependencies
+- Designed for integration with desktop applications
+
+## Installation & Usage
+
+### Desktop App Integration
+
 ```tsx
 import NodeSpaceEditor from 'nodespace-core-ui';
 
@@ -27,20 +58,46 @@ function App() {
       nodes={nodes}
       callbacks={callbacks}
       focusedNodeId={focusedNodeId}
-      // ... other props
+      className={isDarkMode ? 'ns-dark-mode' : ''}
     />
   );
 }
 ```
 
-That's it! CSS and all functionality included automatically.
+### Component API
 
-### For Development
+```tsx
+interface NodeSpaceEditorProps {
+  nodes: BaseNode[];
+  focusedNodeId?: string | null;
+  callbacks?: NodeSpaceCallbacks;
+  onFocus?: (nodeId: string) => void;
+  onBlur?: () => void;
+  className?: string;
+  collapsibleNodeTypes?: Set<string>;
+}
+```
+
+### Node Types
+
+```tsx
+// Text content with markdown support
+const textNode = new TextNode("Content here");
+
+// Task management with completion states
+const taskNode = new TaskNode("Task description", TaskStatus.Todo);
+
+// AI chat interactions
+const chatNode = new AIChatNode("AI conversation title");
+
+// All nodes support hierarchical relationships
+textNode.addChild(taskNode);
+```
+
+## Development
+
 ```bash
-# Install dependencies
-npm install
-
-# Start demo application
+# Start development demo
 npm run demo
 
 # Build component library
@@ -48,182 +105,78 @@ npm run build
 
 # Run tests
 npm test
+
+# Type checking and linting
+npm run type-check && npm run lint
 ```
 
-## 🔧 Component API
+The repository includes:
+- **Comprehensive demo application** - Full feature showcase with examples
+- **Complete test suite** - Component behavior and integration testing
+- **TypeScript definitions** - Full type safety and IntelliSense support
 
-### Main Component: `NodeSpaceEditor`
+## Testing
 
-```tsx
-interface NodeSpaceEditorProps {
-  nodes: BaseNode[];
-  focusedNodeId?: string | null;
-  callbacks: NodeSpaceCallbacks;
-  onFocus?: (nodeId: string) => void;
-  onBlur?: () => void;
-  onRemoveNode?: (node: BaseNode) => void;
-  // Collapsed state management
-  collapsedNodes?: Set<string>;
-  collapsibleNodeTypes?: Set<string>;
-  onCollapseChange?: (nodeId: string, collapsed: boolean) => void;
-  className?: string;
-}
-```
-
-### Node Types
-- `BaseNode` - Base class for all hierarchical nodes
-- `TextNode` - Text content with markdown support
-- `TaskNode` - Task items with completion state
-- `DateNode` - Date/time-based content organization
-- `EntityNode` - User-defined custom node types
-
-### Utilities Exported
-- `countAllNodes` - Count total nodes in tree
-- `nodeUtils` - Various node manipulation utilities
-- `keyboardHandlers` - Keyboard interaction logic
-
-## 🏗️ Features
-
-### ✅ Hierarchical Block Editor
-- **Collapsible nodes** - Editor-level collapsed state management
-- **Visual hierarchy** - Indentation and connecting lines
-- **Keyboard navigation** - Full keyboard support
-- **Rich editing** - Multiple node types (text, tasks, dates, entities)
-- **Clean architecture** - Separation of data model and UI state
-
-### ✅ Keyboard Shortcuts
-- **Enter**: Split content and create new sibling node
-- **Shift+Enter**: Add newline within current node
-- **Backspace at start**: Join with previous node (intelligent child transfer)
-- **Delete at end**: Join with next node (intelligent child transfer)
-- **Tab**: Indent node (make child of previous sibling)
-- **Shift+Tab**: Outdent node (make sibling of parent)
-
-### ✅ Visual Features
-- **Dark mode support** - Toggle between light/dark themes
-- **Circle indicators** - Visual hierarchy indicators
-- **Connecting lines** - Show parent-child relationships
-- **Responsive design** - Works across different screen sizes
-
-## 📁 File Structure
-
-```
-src/
-├── lib.ts                    # Main library export + CSS import
-├── index.tsx                 # Demo app entry point
-├── NodeSpaceEditor.tsx       # Default export component
-├── hierarchy/                # Core rendering components
-│   ├── RenderNodeTree.tsx    # Tree rendering logic
-│   ├── NodeComponent.tsx     # Individual node component
-│   └── NodeEditor.tsx        # Node editing interface
-├── editors/                  # Node-specific editors
-│   ├── TextNodeEditor.tsx    # Text node editor
-│   ├── TaskNodeEditor.tsx    # Task node editor
-│   └── NodeEditorFactory.tsx # Editor selection logic
-├── nodes/                    # Node class definitions
-│   ├── BaseNode.ts           # Base hierarchical node
-│   ├── TextNode.ts           # Text content nodes
-│   ├── TaskNode.ts           # Task management nodes
-│   ├── DateNode.ts           # Date-based organization
-│   └── EntityNode.ts         # User-defined nodes
-├── utils/                    # Utility functions
-│   ├── nodeUtils.ts          # Node manipulation
-│   └── keyboardHandlers.ts   # Keyboard interaction
-├── icons/                    # Icon definitions
-├── nodeSpace.css             # Component styles (auto-bundled)
-└── demo/                     # Demo application
-    ├── App.tsx               # Demo app with examples
-    └── demo.css              # Demo-specific styles
-```
-
-## 🎨 Naming Conventions
-
-### React Components (return JSX)
-- **PascalCase**: `NodeComponent`, `RenderNodeTree`, `NodeEditor`
-- **File names**: Match component name (`NodeComponent.tsx`)
-
-### Utility Functions (no JSX)
-- **camelCase**: `countAllNodes`, `getIconNames`, `nodeUtils`  
-- **File names**: Descriptive camelCase (`nodeUtils.ts`)
-
-### Classes
-- **PascalCase**: `BaseNode`, `TextNode`, `TaskNode`, `EntityNode`
-
-### CSS Files
-- **camelCase**: `nodeSpace.css`, `demo.css`
-
-### Constants
-- **UPPER_SNAKE_CASE**: `DEFAULT_SLASH_OPTIONS`
-
-## 🧪 Demo Application
-
-The `src/demo/` folder contains a complete demo application showcasing all features:
-
-```bash
-npm run demo
-```
-
-**Demo Features:**
-- Complex test scenarios for hierarchy behavior
-- Dark mode toggle
-- Keyboard shortcut help
-- Examples of all node types
-- Test cases for edge behaviors
-
-## 🔗 NodeSpace System Integration
-
-### Architecture Context
-This repository is part of the **NodeSpace distributed system** - an entity-centric, AI-powered knowledge management platform. 
-
-**📖 Full System Overview**: See [NodeSpace System Design](../nodespace-system-design) for complete architecture, development workflow, and coordination.
-
-### This Repository's Role
-- **Independent Component Library** - Pure React components with no backend dependencies
-- **Used by Desktop App** - Imported by `nodespace-desktop-app` for the main application UI
-- **Hierarchical Block Editor** - Specialized for NodeSpace's entity-centric content model
-
-### Integration Pattern
-- **This library**: Provides pure React components and editor logic
-- **Desktop app**: Handles Tauri integration, data persistence, AI processing
-- **Clear separation**: UI components remain independent of business logic
-
-### Distributed Architecture
-- **Loosely coupled** - This library works independently and can be used in other React apps
-- **Highly aligned** - Follows NodeSpace design patterns and entity-centric model
-
-## 📋 Contributing
-
-### For Contributors
-1. **🏗️ System Context**: Read [NodeSpace System Design](../nodespace-system-design) for full architecture understanding
-2. **📋 Find Tasks**: Check [Linear workspace](https://linear.app/nodespace) for current work (filter: `nodespace-core-ui`)
-3. **🤖 Development**: See [CLAUDE.md](./CLAUDE.md) for autonomous development workflow
-4. **🧪 Testing**: Run `npm test` to validate component behavior
-
-### For Users
-- **Installation**: `npm install nodespace-core-ui`
-- **Usage**: Import the main `NodeSpaceEditor` component
-- **Documentation**: Component APIs documented above
-
-### Testing
 ```bash
 # Component unit tests
 npm test
 
-# Type checking
+# TypeScript compilation
 npm run type-check
 
-# Linting
+# ESLint validation
 npm run lint
 ```
 
-### Building for Distribution
-```bash
-# Build component library
-npm run build
+## Technology Stack
 
-# Output in dist/ directory for import by desktop app
+- **Language**: TypeScript with React 18
+- **Component Architecture**: Hierarchical composition with pure function components
+- **State Management**: Component-level state with callback patterns
+- **Styling**: CSS with CSS custom properties for theming
+- **Build System**: React Scripts with TypeScript compilation
+- **Testing**: Jest with React Testing Library
+
+## Node Type System
+
+The library provides an extensible node type system:
+
+```tsx
+// Base node with hierarchical capabilities
+abstract class BaseNode {
+  addChild(child: BaseNode): void;
+  removeChild(child: BaseNode): void;
+  getParent(): BaseNode | null;
+  // ... hierarchy management
+}
+
+// Specialized node types
+class TextNode extends BaseNode { /* markdown content */ }
+class TaskNode extends BaseNode { /* task management */ }
+class AIChatNode extends BaseNode { /* AI interactions */ }
 ```
+
+## Keyboard Interactions
+
+- **Enter** - Split content and create new sibling node
+- **Shift+Enter** - Add newline within current node
+- **Backspace at start** - Join with previous node
+- **Delete at end** - Join with next node
+- **Tab** - Indent node (make child of previous sibling)
+- **Shift+Tab** - Outdent node (make sibling of parent)
+
+## Visual Hierarchy
+
+The component provides sophisticated visual hierarchy representation:
+- **Type indicators** - Circles, squares, and icons for different node types
+- **Connecting lines** - Dotted lines showing parent-child relationships
+- **Collapse triangles** - Interactive controls for tree navigation
+- **Indentation levels** - Visual depth representation
+
+## Related Documentation
+
+For more details on the overall system architecture, see the complete NodeSpace ecosystem above in [Architecture Context](#architecture-context).
 
 ---
 
-**Project Management:** All tasks tracked in [Linear workspace](https://linear.app/nodespace)
+*NodeSpace Core UI provides the sophisticated hierarchical editing interface that makes NodeSpace's AI-powered knowledge management system intuitive and powerful to use.*
